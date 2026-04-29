@@ -1,0 +1,1 @@
+from shared_backend.schemas.internal.worker_service_schema import WorkerServiceStatsRead
