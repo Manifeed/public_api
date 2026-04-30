@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.dependencies.auth_dependencies import require_masked_admin_user
-from app.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
-from app.schemas.health import HealthRead
 from app.services import admin_dashboard_service
+
+from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
+from shared_backend.schemas.health import HealthRead
 
 
 admin_health_router = APIRouter(

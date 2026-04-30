@@ -1,6 +1,7 @@
 from app.clients.networking.content_service_networking_client import get_required_content_service_client
-from app.schemas.analytics.analysis_schema import SimilarSourcesRead
-from app.schemas.sources.source_schema import (
+
+from shared_backend.schemas.analytics.analysis_schema import SimilarSourcesRead
+from shared_backend.schemas.sources.source_schema import (
     RssSourceDetailRead,
     RssSourcePageRead,
     UserSourceDetailRead,

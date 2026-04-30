@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from app.clients.networking.auth_service_networking_client import get_required_auth_service_client
-from app.schemas.auth.auth_schema import (
+
+from shared_backend.schemas.auth.auth_schema import (
     AuthLoginRequestSchema,
     AuthLogoutRead,
     AuthRegisterRead,
     AuthRegisterRequestSchema,
     AuthSessionRead,
 )
-from app.schemas.auth.session_schema import AuthLoginResult
-
+from shared_backend.schemas.auth.session_schema import AuthLoginResult
 from shared_backend.domain.current_user import AuthenticatedUserContext
 
 

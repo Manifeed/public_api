@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, Path, Query
 
 from app.dependencies.auth_dependencies import require_masked_admin_user
-from app.schemas.admin.admin_stats_schema import AdminStatsRead
-from app.schemas.admin.admin_user_schema import (
+from app.services import admin_service
+
+from shared_backend.schemas.admin.admin_stats_schema import AdminStatsRead
+from shared_backend.schemas.admin.admin_user_schema import (
     AdminUserListRead,
     AdminUserRead,
     AdminUserUpdateRequestSchema,
 )
-from app.schemas.auth.auth_schema import UserRole
-from app.services import admin_service
-
+from shared_backend.schemas.auth.auth_schema import UserRole
 
 admin_router = APIRouter(prefix="/api/admin", tags=["admin"])
 

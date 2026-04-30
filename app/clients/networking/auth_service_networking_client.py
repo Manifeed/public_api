@@ -4,22 +4,24 @@ from typing import Any
 
 import httpx
 
+from app.clients.networking.service_client_registry import get_service_http_client_registry
 from app.clients.networking.service_http_client import (
     ServiceClientConfig,
     build_service_config,
     request_service,
     require_service_client,
 )
-from app.schemas.auth.auth_schema import (
+from shared_backend.schemas.internal.service_schema import InternalResolvedSessionRead, InternalServiceHealthRead
+
+from shared_backend.schemas.auth.auth_schema import (
     AuthLoginRequestSchema,
     AuthLogoutRead,
     AuthRegisterRead,
     AuthRegisterRequestSchema,
     AuthSessionRead,
 )
-from app.schemas.auth.session_schema import AuthLoginResult
-from app.schemas.internal.auth_service_schema import InternalAuthLoginRead
-from app.schemas.internal.service_schema import InternalResolvedSessionRead
+from shared_backend.schemas.auth.session_schema import AuthLoginResult
+from shared_backend.schemas.internal.auth_service_schema import InternalAuthLoginRead
 
 
 class AuthServiceNetworkingClient:
@@ -41,7 +43,8 @@ class AuthServiceNetworkingClient:
         )
         if config is None:
             return None
-        return cls(config)
+        registry = get_service_http_client_registry()
+        return cls(config, http_client=registry.auth if registry is not None else None)
 
     def register(self, payload: AuthRegisterRequestSchema) -> AuthRegisterRead:
         response = self._post("/internal/auth/register", json=payload.model_dump(mode="json"))
@@ -57,16 +60,34 @@ class AuthServiceNetworkingClient:
         )
 
     def read_session(self, *, session_token: str) -> AuthSessionRead:
-        response = self._post("/internal/auth/session", json={"session_token": session_token})
+        response = self._post(
+            "/internal/auth/session",
+            json={"payload": {"session_token": session_token}},
+        )
         return AuthSessionRead.model_validate(response.json())
 
     def resolve_session(self, *, session_token: str) -> InternalResolvedSessionRead:
-        response = self._post("/internal/auth/resolve-session", json={"session_token": session_token})
+        response = self._post(
+            "/internal/auth/resolve-session",
+            json={"payload": {"session_token": session_token}},
+        )
         return InternalResolvedSessionRead.model_validate(response.json())
 
     def logout(self, *, session_token: str) -> AuthLogoutRead:
-        response = self._post("/internal/auth/logout", json={"session_token": session_token})
+        response = self._post(
+            "/internal/auth/logout",
+            json={"payload": {"session_token": session_token}},
+        )
         return AuthLogoutRead.model_validate(response.json())
+
+    def read_internal_health(self) -> InternalServiceHealthRead:
+        response = request_service(
+            config=self._config,
+            method="GET",
+            path="/internal/health",
+            http_client=self._http_client,
+        )
+        return InternalServiceHealthRead.model_validate(response.json())
 
     def _post(self, path: str, *, json: dict[str, Any]) -> httpx.Response:
         return request_service(

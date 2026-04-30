@@ -1,1 +1,0 @@
-from shared_backend.domain.current_user import AuthenticatedUserContext

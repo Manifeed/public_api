@@ -5,7 +5,10 @@ from app.dependencies.auth_dependencies import (
     require_masked_api_enabled_user,
 )
 from app.middleware.rate_limit import enforce_rate_limit
-from app.schemas.account.account_schema import (
+from app.services import account_service
+from app.utils.session_cookie import clear_session_cookie
+
+from shared_backend.schemas.account.account_schema import (
     AccountMeRead,
     AccountPasswordUpdateRead,
     AccountPasswordUpdateRequestSchema,
@@ -16,9 +19,6 @@ from app.schemas.account.account_schema import (
     UserApiKeyDeleteRead,
     UserApiKeyListRead,
 )
-from app.services import account_service
-from app.utils.session_cookie import clear_session_cookie
-
 
 account_router = APIRouter(prefix="/api/account", tags=["account"])
 

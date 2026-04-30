@@ -2,25 +2,27 @@ from __future__ import annotations
 
 import httpx
 
+from app.clients.networking.service_client_registry import get_service_http_client_registry
 from app.clients.networking.service_http_client import (
     ServiceClientConfig,
     build_service_config,
     request_service,
     require_service_client,
 )
-from app.schemas.internal.worker_service_schema import WorkerServiceStatsRead
-from app.schemas.jobs.job_automation_schema import (
+from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
+
+from shared_backend.schemas.jobs.job_automation_schema import (
     JobAutomationRead,
     JobAutomationUpdateRequestSchema,
 )
-from app.schemas.jobs.job_enqueue_schema import (
+from shared_backend.schemas.jobs.job_enqueue_schema import (
     JobEnqueueRead,
     RssScrapeJobCreateRequestSchema,
     SourceEmbeddingJobCreateRequestSchema,
 )
-from app.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
-from app.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
-
+from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
+from shared_backend.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
+from shared_backend.schemas.internal.worker_service_schema import WorkerServiceStatsRead
 
 class WorkerServiceNetworkingClient:
     def __init__(
@@ -41,7 +43,8 @@ class WorkerServiceNetworkingClient:
         )
         if config is None:
             return None
-        return cls(config)
+        registry = get_service_http_client_registry()
+        return cls(config, http_client=registry.worker if registry is not None else None)
 
     def read_worker_stats(self) -> WorkerServiceStatsRead:
         response = request_service(
@@ -136,6 +139,15 @@ class WorkerServiceNetworkingClient:
             http_client=self._http_client,
         )
         return WorkerDesktopReleaseListRead.model_validate(response.json())
+
+    def read_internal_health(self) -> InternalServiceHealthRead:
+        response = request_service(
+            config=self._config,
+            method="GET",
+            path="/internal/health",
+            http_client=self._http_client,
+        )
+        return InternalServiceHealthRead.model_validate(response.json())
 
 
 def get_worker_service_client() -> WorkerServiceNetworkingClient | None:

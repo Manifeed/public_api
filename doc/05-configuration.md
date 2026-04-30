@@ -16,6 +16,7 @@
 
 - `REQUIRE_INTERNAL_SERVICE_TOKEN`
 	- forces strict token expectations in token-validation helpers
+	- takes precedence over local/dev environment relaxation
 
 ## Browser and Security Settings
 
@@ -44,7 +45,8 @@
 - `WORKER_SERVICE_URL`
 
 If a required upstream URL is missing, the corresponding client raises an
-upstream service configuration error when used.
+upstream service configuration error when used, and `GET /internal/ready`
+reports the dependency as `not_ready` and returns `503`.
 
 ## Upstream Timeout Variables
 
@@ -72,3 +74,17 @@ Invalid or non-positive timeout values fall back to the default.
 - `REDIS_SOCKET_TIMEOUT_SECONDS`
 	- default: `0.2`
 	- invalid or non-positive values fall back to default
+
+## Readiness and Operations
+
+- `GET /internal/health`
+	- static liveness endpoint
+
+- `GET /internal/ready`
+	- validates config and pings critical dependencies
+	- returns `200` only when overall readiness is `ready`
+	- returns `503` when any critical dependency or strict security check is `not_ready`
+
+- `HEALTH_INCLUDE_DETAILS`
+	- not used by `public_api`
+	- health and readiness detail payloads stay minimal and dependency-oriented

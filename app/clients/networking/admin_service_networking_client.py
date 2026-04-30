@@ -4,39 +4,43 @@ from typing import Any
 
 import httpx
 
+from app.clients.networking.service_client_registry import get_service_http_client_registry
 from app.clients.networking.service_http_client import (
     ServiceClientConfig,
     build_service_config,
     request_service,
     require_service_client,
 )
-from app.schemas.admin.admin_stats_schema import AdminStatsRead
-from app.schemas.admin.admin_user_schema import (
-    AdminUserListRead,
-    AdminUserRead,
-    AdminUserUpdateRequestSchema,
-)
-from app.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
-from app.schemas.auth.auth_schema import UserRole
-from app.schemas.health import HealthRead
-from app.schemas.jobs.job_automation_schema import (
+
+from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
+from shared_backend.schemas.health import HealthRead
+from shared_backend.schemas.jobs.job_automation_schema import (
     JobAutomationRead,
     JobAutomationUpdateRequestSchema,
 )
-from app.schemas.jobs.job_enqueue_schema import (
+from shared_backend.schemas.jobs.job_enqueue_schema import (
     JobEnqueueRead,
     RssScrapeJobCreateRequestSchema,
     SourceEmbeddingJobCreateRequestSchema,
 )
-from app.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
-from app.schemas.rss.rss_company_schema import RssCompanyRead
-from app.schemas.rss.rss_enabled_toggle_schema import (
+from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
+from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
+from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
+from shared_backend.schemas.rss.rss_enabled_toggle_schema import (
     RssCompanyEnabledToggleRead,
     RssEnabledTogglePayload,
     RssFeedEnabledToggleRead,
 )
-from app.schemas.rss.rss_feed_schema import RssFeedRead
-from app.schemas.rss.rss_sync_schema import RssSyncRead
+from shared_backend.schemas.rss.rss_feed_schema import RssFeedRead
+from shared_backend.schemas.rss.rss_sync_schema import RssSyncRead
+
+from shared_backend.schemas.admin.admin_stats_schema import AdminStatsRead
+from shared_backend.schemas.admin.admin_user_schema import (
+    AdminUserListRead,
+    AdminUserRead,
+    AdminUserUpdateRequestSchema,
+)
+from shared_backend.schemas.auth.auth_schema import UserRole
 
 
 class AdminServiceNetworkingClient:
@@ -52,7 +56,10 @@ class AdminServiceNetworkingClient:
             default_timeout_seconds=10.0,
             service_name="Admin",
         )
-        return cls(config) if config is not None else None
+        if config is None:
+            return None
+        registry = get_service_http_client_registry()
+        return cls(config, http_client=registry.admin if registry is not None else None)
 
     def read_admin_users(
         self,
@@ -181,6 +188,10 @@ class AdminServiceNetworkingClient:
     def read_job_status(self, *, job_id: str) -> JobStatusRead:
         response = self._get(f"/internal/admin/jobs/{job_id}")
         return JobStatusRead.model_validate(response.json())
+
+    def read_internal_health(self) -> InternalServiceHealthRead:
+        response = self._get("/internal/health")
+        return InternalServiceHealthRead.model_validate(response.json())
 
     def _get(self, path: str, *, params: dict[str, Any] | None = None) -> httpx.Response:
         return request_service(

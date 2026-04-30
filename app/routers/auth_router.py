@@ -2,14 +2,6 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from app.dependencies.auth_dependencies import require_authenticated_user
 from app.middleware.rate_limit import enforce_rate_limit
-from app.schemas.auth.auth_schema import (
-    AuthLoginRead,
-    AuthLoginRequestSchema,
-    AuthLogoutRead,
-    AuthRegisterRead,
-    AuthRegisterRequestSchema,
-    AuthSessionRead,
-)
 from app.services import auth_service
 from app.utils.session_cookie import (
     clear_session_cookie,
@@ -17,6 +9,14 @@ from app.utils.session_cookie import (
     set_session_cookie,
 )
 
+from shared_backend.schemas.auth.auth_schema import (
+    AuthLoginRead,
+    AuthLoginRequestSchema,
+    AuthLogoutRead,
+    AuthRegisterRead,
+    AuthRegisterRequestSchema,
+    AuthSessionRead,
+)
 
 auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -30,6 +30,20 @@ def register_auth_user(
         request,
         namespace="auth-register-ip",
         limit=10,
+        window_seconds=3600,
+    )
+    enforce_rate_limit(
+        request,
+        namespace="auth-register-email",
+        identifier=payload.email.strip().lower(),
+        limit=5,
+        window_seconds=3600,
+    )
+    enforce_rate_limit(
+        request,
+        namespace="auth-register-pseudo",
+        identifier=payload.pseudo.strip().lower(),
+        limit=5,
         window_seconds=3600,
     )
     return auth_service.register_auth_user(payload)

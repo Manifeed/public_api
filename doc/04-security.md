@@ -11,6 +11,8 @@ Session cookie settings:
 - path: `/`
 
 The session token is read from the cookie, not from a public bearer header.
+Password changes clear the browser cookie in `public_api`, while `user_service`
+revokes active server-side sessions.
 
 ## CSRF Protection
 
@@ -51,8 +53,8 @@ Outbound internal-service header:
 Behavior:
 
 - the header is added to upstream HTTP calls when `INTERNAL_SERVICE_TOKEN` is configured
-- token comparison logic exists in `app/security.py`
-- local/test-like environments may relax token requirements when explicitly treated as local
+- token comparison logic comes from `shared_backend/security/internal_service_auth.py`
+- `REQUIRE_INTERNAL_SERVICE_TOKEN=true` always forces strict validation, even in local-like environments
 
 ## Rate Limiting Security
 
@@ -61,6 +63,8 @@ Protected flows:
 - auth register
 - auth login
 - account API key creation
+
+Register rate limits are scoped by IP, email, and pseudo.
 
 Redis availability policy:
 
@@ -76,3 +80,4 @@ Behavior:
 - transport-level failures become upstream-service errors
 - JSON upstream error payloads are mapped into application-level responses
 - this gives callers a more consistent public error surface
+- structured request logs capture upstream target, latency, and failure class

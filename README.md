@@ -16,6 +16,7 @@ stable public API surface and orchestrate calls to upstream services.
 - Admin routes backed by `admin_service`
 - Source and RSS read routes backed by `content_service`
 - Worker desktop release catalog route backed by `worker_service`
+- Readiness endpoint for production orchestration
 - Public concerns only: CORS, CSRF, upstream error mapping, and rate limiting
 
 ## Architecture Overview
@@ -27,7 +28,7 @@ stable public API surface and orchestrate calls to upstream services.
 - `app/clients/networking`: upstream HTTP clients and Redis rate-limit client
 - `app/middleware`: CSRF and rate limiting
 - `app/utils`: environment helpers and session cookie helpers
-- `shared_backend`: shared schemas, domain models, and error contracts
+- `shared_backend`: shared schemas, domain models, error contracts, inter-service auth helpers, and HTTP client primitives
 
 ## Upstream Service Dependencies
 
@@ -78,6 +79,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 Main entry points include:
 
 - `GET /internal/health`
+- `GET /internal/ready`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
@@ -98,6 +100,8 @@ Main entry points include:
 - Selected routes are rate-limited with Redis-backed counters or in-memory
   fallback in non-strict environments.
 - Upstream internal requests can include `x-manifeed-internal-token`.
+- Password changes clear the browser cookie while `user_service` revokes
+  active server-side sessions.
 
 ## Configuration
 
@@ -139,11 +143,12 @@ Main entry points include:
 Run the test suite:
 
 ```bash
-pytest -q
+python -m pytest -q
 ```
 
-Current coverage is minimal and currently focuses on Python source syntax
-validity.
+Coverage includes gateway route tests for auth/session flows, CSRF, masked
+admin access, RSS and sources routes, jobs and admin dashboard routes, worker
+release URL rewriting, readiness, and rate-limit/security behavior.
 
 ## Docker
 
@@ -168,6 +173,21 @@ docker run --rm -p 8000:8000 \
 	-e CSRF_TRUSTED_ORIGINS='https://app.example.com' \
 	manifeed-public-api
 ```
+
+The runtime image is multi-stage, runs as a dedicated non-root user, and uses
+`/internal/ready` for its container healthcheck. `shared_backend` is installed
+from a wheel built locally from the monorepo. The endpoint returns `200`
+only when the service is actually ready, and `503` when a critical dependency
+or configuration check fails.
+
+## Edge Deployment Notes
+
+- `/api/*` is served by `public_api` through Nginx.
+- `/workers/api/*` is served directly by `worker_service` through Nginx.
+- `GET /workers/api/releases/desktop` returns edge-routable `download_url`
+  values, but the binary download itself is not served by `public_api`.
+- `release_notes_url` is preserved from `worker_service`; `public_api` does not
+  fabricate a `/workers` page.
 
 ## Detailed Documentation
 

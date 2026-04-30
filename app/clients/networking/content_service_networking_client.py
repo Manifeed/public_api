@@ -4,14 +4,17 @@ from typing import Any
 
 import httpx
 
+from app.clients.networking.service_client_registry import get_service_http_client_registry
 from app.clients.networking.service_http_client import (
     ServiceClientConfig,
     build_service_config,
     request_service,
     require_service_client,
 )
-from app.schemas.analytics.analysis_schema import SimilarSourcesRead
-from app.schemas.sources.source_schema import (
+from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
+
+from shared_backend.schemas.analytics.analysis_schema import SimilarSourcesRead
+from shared_backend.schemas.sources.source_schema import (
     RssSourceDetailRead,
     RssSourcePageRead,
     UserSourceDetailRead,
@@ -39,7 +42,10 @@ class ContentServiceNetworkingClient:
             default_timeout_seconds=10.0,
             service_name="Content",
         )
-        return cls(config) if config is not None else None
+        if config is None:
+            return None
+        registry = get_service_http_client_registry()
+        return cls(config, http_client=registry.content if registry is not None else None)
 
     def list_admin_sources(
         self,
@@ -127,6 +133,10 @@ class ContentServiceNetworkingClient:
             params=params,
             http_client=self._http_client,
         )
+
+    def read_internal_health(self) -> InternalServiceHealthRead:
+        response = self._get("/internal/health")
+        return InternalServiceHealthRead.model_validate(response.json())
 
 
 def get_content_service_client() -> ContentServiceNetworkingClient | None:

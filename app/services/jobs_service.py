@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from app.clients.networking.admin_service_networking_client import get_required_admin_service_client
-from app.schemas.jobs.job_automation_schema import (
+
+from shared_backend.schemas.jobs.job_automation_schema import (
     JobAutomationRead,
     JobAutomationUpdateRequestSchema,
 )
-from app.schemas.jobs.job_enqueue_schema import (
+from shared_backend.schemas.jobs.job_enqueue_schema import (
     JobEnqueueRead,
     RssScrapeJobCreateRequestSchema,
     SourceEmbeddingJobCreateRequestSchema,
 )
-from app.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
+from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
 
 
 def list_jobs(*, limit: int) -> JobsOverviewRead:

@@ -15,6 +15,38 @@ Response:
 }
 ```
 
+### `GET /internal/ready`
+
+Readiness endpoint.
+
+Behavior:
+
+- validates required upstream configuration
+- validates strict internal-token configuration
+- checks Redis reachability for rate limiting
+- pings each critical upstream service through `/internal/health`
+
+HTTP status behavior:
+
+- returns `200 OK` when the overall readiness status is `ready`
+- returns `503 Service Unavailable` when the overall readiness status is `not_ready`
+
+Response shape:
+
+```json
+{
+	"service": "public-api",
+	"status": "ready",
+	"dependencies": {
+		"auth_service": {
+			"name": "auth_service",
+			"kind": "http",
+			"status": "ready"
+		}
+	}
+}
+```
+
 ## Auth Endpoints
 
 ### `POST /api/auth/register`
@@ -24,11 +56,13 @@ Creates a user through `auth_service`.
 Behavior:
 
 - forwards the payload to `auth_service`
-- applies IP-based rate limiting before forwarding
+- applies IP-based, email-based, and pseudo-based rate limiting before forwarding
 
 Rate limits:
 
 - IP: 10 requests / 1 hour
+- Email: 5 requests / 1 hour
+- Pseudo: 5 requests / 1 hour
 
 ### `POST /api/auth/login`
 
@@ -90,6 +124,7 @@ Updates the current account password through `user_service`.
 Behavior:
 
 - forwards the password-change request to `user_service`
+- `user_service` revokes active server-side sessions
 - clears the browser session cookie after success
 
 ### `GET /api/account/api-keys`
@@ -194,7 +229,9 @@ Returns the public worker desktop release catalog from `worker_service`.
 Behavior:
 
 - reads the desktop release list from `worker_service`
-- rewrites `download_url` and `release_notes_url` to the current public base URL
+- rewrites only `download_url` to the current public base URL
+- keeps upstream `release_notes_url` unchanged
+- the downloadable artifacts themselves are served by `worker_service` through the edge Nginx split route, not by `public_api`
 
 ## Runtime Flows
 

@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Body, Depends, Path, Query
 
 from app.dependencies.auth_dependencies import require_masked_admin_user
-from app.schemas.jobs.job_automation_schema import (
+
+from shared_backend.schemas.jobs.job_automation_schema import (
     JobAutomationRead,
     JobAutomationUpdateRequestSchema,
 )
-from app.schemas.jobs.job_enqueue_schema import (
+from shared_backend.schemas.jobs.job_enqueue_schema import (
     JobEnqueueRead,
     RssScrapeJobCreateRequestSchema,
     SourceEmbeddingJobCreateRequestSchema,
 )
-from app.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
+from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
 from app.services import jobs_service
 
 

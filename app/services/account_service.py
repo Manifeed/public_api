@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from app.clients.networking.user_service_networking_client import get_required_user_service_client
-from app.schemas.account.account_schema import (
+
+from shared_backend.schemas.account.account_schema import (
     AccountMeRead,
     AccountPasswordUpdateRead,
     AccountPasswordUpdateRequestSchema,
@@ -12,8 +13,8 @@ from app.schemas.account.account_schema import (
     UserApiKeyDeleteRead,
     UserApiKeyListRead,
 )
-
 from shared_backend.domain.current_user import AuthenticatedUserContext
+
 
 def read_account_me(*, current_user: AuthenticatedUserContext) -> AccountMeRead:
     return get_required_user_service_client().read_account_me(current_user=current_user)

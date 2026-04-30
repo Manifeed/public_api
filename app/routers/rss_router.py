@@ -4,15 +4,16 @@ from fastapi import APIRouter, Depends, Path, Query
 from fastapi.responses import Response
 
 from app.dependencies.auth_dependencies import require_masked_admin_user
-from app.schemas.rss.rss_company_schema import RssCompanyRead
-from app.schemas.rss.rss_enabled_toggle_schema import (
+from app.services import rss_service
+
+from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
+from shared_backend.schemas.rss.rss_enabled_toggle_schema import (
     RssCompanyEnabledToggleRead,
     RssEnabledTogglePayload,
     RssFeedEnabledToggleRead,
 )
-from app.schemas.rss.rss_feed_schema import RssFeedRead
-from app.schemas.rss.rss_sync_schema import RssSyncRead
-from app.services import rss_service
+from shared_backend.schemas.rss.rss_feed_schema import RssFeedRead
+from shared_backend.schemas.rss.rss_sync_schema import RssSyncRead
 
 
 rss_admin_router = APIRouter(

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from app.clients.networking.admin_service_networking_client import get_required_admin_service_client
-from app.schemas.admin.admin_stats_schema import AdminStatsRead
-from app.schemas.admin.admin_user_schema import (
+
+from shared_backend.schemas.admin.admin_stats_schema import AdminStatsRead
+from shared_backend.schemas.admin.admin_user_schema import (
     AdminUserListRead,
     AdminUserRead,
     AdminUserUpdateRequestSchema,
 )
-from app.schemas.auth.auth_schema import UserRole
+from shared_backend.schemas.auth.auth_schema import UserRole
 
 
 def read_admin_users(

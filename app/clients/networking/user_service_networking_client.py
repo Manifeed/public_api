@@ -4,13 +4,16 @@ from typing import Any
 
 import httpx
 
+from app.clients.networking.service_client_registry import get_service_http_client_registry
 from app.clients.networking.service_http_client import (
     ServiceClientConfig,
     build_service_config,
     request_service,
     require_service_client,
 )
-from app.schemas.account.account_schema import (
+from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
+
+from shared_backend.schemas.account.account_schema import (
     AccountMeRead,
     AccountPasswordUpdateRead,
     AccountPasswordUpdateRequestSchema,
@@ -21,19 +24,18 @@ from app.schemas.account.account_schema import (
     UserApiKeyDeleteRead,
     UserApiKeyListRead,
 )
-from app.schemas.admin.admin_user_schema import (
+from shared_backend.schemas.admin.admin_user_schema import (
     AdminUserListRead,
     AdminUserRead,
     AdminUserUpdateRequestSchema,
 )
-from app.schemas.auth.auth_schema import UserRole
-from app.schemas.internal.user_service_schema import (
+from shared_backend.schemas.auth.auth_schema import UserRole
+from shared_backend.schemas.internal.user_service_schema import (
     InternalAccountPasswordUpdateRequest,
     InternalAccountProfileUpdateRequest,
     InternalApiKeyCreateRequest,
     InternalCurrentUserPayload,
 )
-
 from shared_backend.domain.current_user import AuthenticatedUserContext
 
 
@@ -56,7 +58,8 @@ class UserServiceNetworkingClient:
         )
         if config is None:
             return None
-        return cls(config)
+        registry = get_service_http_client_registry()
+        return cls(config, http_client=registry.user if registry is not None else None)
 
     def read_account_me(self, *, current_user: AuthenticatedUserContext) -> AccountMeRead:
         response = self._post(
@@ -189,6 +192,10 @@ class UserServiceNetworkingClient:
             json=json,
             http_client=self._http_client,
         )
+
+    def read_internal_health(self) -> InternalServiceHealthRead:
+        response = self._request("GET", "/internal/health", params=None, json=None)
+        return InternalServiceHealthRead.model_validate(response.json())
 
 
 def get_user_service_client() -> UserServiceNetworkingClient | None:

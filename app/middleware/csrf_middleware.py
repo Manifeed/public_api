@@ -6,7 +6,8 @@ from urllib.parse import urlsplit
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from app.errors.custom_exceptions import CsrfOriginDeniedError
+from shared_backend.errors.custom_exceptions import CsrfOriginDeniedError
+from app.observability.request_context import mark_csrf_denied
 from app.utils.environment_utils import (
     is_development_environment,
     is_production_like_environment,
@@ -21,6 +22,7 @@ async def csrf_origin_middleware(request: Request, call_next):
         request_origin = _extract_request_origin(request)
         trusted_origins = _resolve_trusted_origins(request)
         if request_origin is None or request_origin not in trusted_origins:
+            mark_csrf_denied()
             exception = CsrfOriginDeniedError()
             return JSONResponse(
                 status_code=exception.status_code,

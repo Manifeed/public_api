@@ -3,14 +3,15 @@ from app.clients.networking.content_service_networking_client import (
     ContentImageRead,
     get_required_content_service_client,
 )
-from app.schemas.rss.rss_company_schema import RssCompanyRead
-from app.schemas.rss.rss_enabled_toggle_schema import (
+
+from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
+from shared_backend.schemas.rss.rss_enabled_toggle_schema import (
     RssCompanyEnabledToggleRead,
     RssEnabledTogglePayload,
     RssFeedEnabledToggleRead,
 )
-from app.schemas.rss.rss_feed_schema import RssFeedRead
-from app.schemas.rss.rss_sync_schema import RssSyncRead
+from shared_backend.schemas.rss.rss_feed_schema import RssFeedRead
+from shared_backend.schemas.rss.rss_sync_schema import RssSyncRead
 
 
 def list_rss_companies() -> list[RssCompanyRead]:

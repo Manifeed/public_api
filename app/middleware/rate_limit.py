@@ -10,7 +10,8 @@ from app.clients.networking.redis_networking_client import (
 )
 from fastapi import Request
 
-from app.errors.custom_exceptions import RateLimitExceededError
+from shared_backend.errors.custom_exceptions import RateLimitExceededError
+from app.observability.request_context import mark_rate_limit_blocked
 from app.utils.environment_utils import is_production_like_environment
 
 
@@ -31,7 +32,7 @@ def enforce_rate_limit(
     window_seconds: int,
     identifier: str | None = None,
 ) -> None:
-    if not _rate_limit_enabled():
+    if not is_rate_limit_enabled():
         return
 
     key = _build_rate_limit_key(
@@ -40,19 +41,21 @@ def enforce_rate_limit(
     )
     count = _increment_redis_bucket(key, window_seconds)
     if count is None:
-        if _redis_required_for_rate_limit():
+        if is_redis_required_for_rate_limit():
+            mark_rate_limit_blocked()
             raise RateLimitExceededError("Rate limiting is temporarily unavailable")
         count = _increment_memory_bucket(key, window_seconds)
     if count > limit:
+        mark_rate_limit_blocked()
         raise RateLimitExceededError()
 
 
-def _rate_limit_enabled() -> bool:
+def is_rate_limit_enabled() -> bool:
     raw_value = os.getenv("RATE_LIMIT_ENABLED", "true")
     return raw_value.strip().lower() not in {"0", "false", "no", "off"}
 
 
-def _redis_required_for_rate_limit() -> bool:
+def is_redis_required_for_rate_limit() -> bool:
     raw_value = os.getenv("RATE_LIMIT_REDIS_REQUIRED")
     if raw_value is not None:
         return raw_value.strip().lower() in {"1", "true", "yes", "on"}

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import Depends, Request
 
-from app.errors.app_error import NotFoundError
-from app.errors.custom_exceptions import (
+from shared_backend.errors.app_error import NotFoundError
+from shared_backend.errors.custom_exceptions import (
     AdminAccessRequiredError,
     ApiAccessDisabledError,
     MissingSessionTokenError,

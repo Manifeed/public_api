@@ -2,8 +2,9 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Request
 
-from app.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
 from app.services.worker_release_service import list_desktop_releases
+
+from shared_backend.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
 
 
 worker_release_router = APIRouter(prefix="/workers/api", tags=["workers-release"])
@@ -22,7 +23,7 @@ def list_public_desktop_releases(request: Request) -> WorkerDesktopReleaseListRe
                             f"{base_url}"
                             f"{_resolve_download_path(item.artifact_name, item.download_url)}"
                         ),
-                        "release_notes_url": f"{base_url}/workers",
+                        "release_notes_url": item.release_notes_url,
                     }
                 )
                 for item in releases.items

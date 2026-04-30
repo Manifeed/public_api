@@ -1,6 +1,7 @@
 from app.clients.networking.admin_service_networking_client import get_required_admin_service_client
-from app.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
-from app.schemas.health import HealthRead
+
+from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
+from shared_backend.schemas.health import HealthRead
 
 
 def read_health() -> HealthRead:

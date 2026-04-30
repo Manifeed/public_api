@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, Path, Query
 
 from app.dependencies.auth_dependencies import require_authenticated_user, require_masked_admin_user
-from app.schemas.analytics.analysis_schema import SimilarSourcesRead
-from app.schemas.sources.source_schema import (
+from app.services import sources_service
+
+from shared_backend.schemas.analytics.analysis_schema import SimilarSourcesRead
+from shared_backend.schemas.sources.source_schema import (
     RssSourceDetailRead,
     RssSourcePageRead,
     UserSourceDetailRead,
     UserSourcePageRead,
 )
-from app.services import sources_service
 
 
 admin_sources_router = APIRouter(
