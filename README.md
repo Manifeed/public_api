@@ -67,6 +67,7 @@ Optional settings for browser development:
 ```bash
 export CORS_ORIGINS=http://localhost:3000,http://localhost:8080
 export CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:8080
+export PUBLIC_BASE_URL=http://localhost
 export REDIS_URL=redis://localhost:6379/0
 ```
 
@@ -99,6 +100,12 @@ Main entry points include:
 - Admin routes are guarded by admin-only dependencies.
 - Selected routes are rate-limited with Redis-backed counters or in-memory
   fallback in non-strict environments.
+- Nginx owns the coarse IP-based rate limits; `public_api` only applies
+  identifier-based limits such as email, pseudo, and user ID.
+- Public worker release URLs are derived from `PUBLIC_BASE_URL`, not the
+  incoming `Host` header.
+- Structured request logs include a propagated `X-Request-ID`, route template,
+  latency, and upstream call traces without dumping raw query strings.
 - Upstream internal requests can include `x-manifeed-internal-token`.
 - Password changes clear the browser cookie while `user_service` revokes
   active server-side sessions.
@@ -109,6 +116,8 @@ Main entry points include:
 
 - `APP_ENV` / `ENVIRONMENT` / `NODE_ENV`
 - `CORS_ORIGINS`
+- `PUBLIC_BASE_URL`
+- `ALLOWED_HOSTS`
 - `CSRF_TRUSTED_ORIGINS`
 - `CSRF_TRUST_SELF_ORIGIN`
 - `AUTH_SESSION_COOKIE_SECURE`
@@ -171,6 +180,7 @@ docker run --rm -p 8000:8000 \
 	-e INTERNAL_SERVICE_TOKEN='replace-with-strong-secret-min-32-chars' \
 	-e CORS_ORIGINS='https://app.example.com' \
 	-e CSRF_TRUSTED_ORIGINS='https://app.example.com' \
+	-e PUBLIC_BASE_URL='https://app.example.com' \
 	manifeed-public-api
 ```
 

@@ -6,13 +6,13 @@ from typing import List, Tuple
 
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.clients.networking.redis_networking_client import reset_redis_client
 from app.clients.networking.service_client_registry import (
     close_service_http_client_registry,
     initialize_service_http_client_registry,
 )
-from shared_backend.errors.exception_handlers import register_exception_handlers
 from app.middleware.csrf_middleware import csrf_origin_middleware
 from app.middleware.observability_middleware import observability_middleware
 from app.routers.account_router import account_router
@@ -23,10 +23,13 @@ from app.routers.jobs_router import jobs_router
 from app.routers.rss_router import rss_admin_router, rss_public_router
 from app.routers.sources_router import admin_sources_router, user_sources_router
 from app.routers.worker_release_router import worker_release_router
-from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
 from app.schemas.internal.service_schema import InternalServiceReadyRead
 from app.services.readiness_service import read_internal_ready
-from app.utils.environment_utils import is_development_environment
+from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
+from shared_backend.errors.exception_handlers import register_exception_handlers
+from shared_backend.utils.environment_utils import is_development_environment
+from shared_backend.utils.logging_utils import configure_service_logging
+from shared_backend.utils.public_url import require_public_base_url, resolve_allowed_hosts
 
 
 def _parse_cors_origins() -> Tuple[List[str], bool]:
@@ -52,7 +55,16 @@ async def _app_lifespan(_app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    configure_service_logging("public-api")
+    public_base_url = require_public_base_url()
     app = FastAPI(title="Manifeed Public API", lifespan=_app_lifespan)
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=resolve_allowed_hosts(
+            public_base_url=public_base_url,
+            raw_allowed_hosts=os.getenv("ALLOWED_HOSTS", ""),
+        ),
+    )
     cors_origins, allow_credentials = _parse_cors_origins()
     app.add_middleware(
         CORSMiddleware,

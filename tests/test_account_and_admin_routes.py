@@ -16,7 +16,7 @@ def test_account_password_clears_cookie_after_success(
     monkeypatch.setattr(
         account_service,
         "update_account_password",
-        lambda *, current_user, payload: AccountPasswordUpdateRead(ok=True),
+        lambda *, session_token, payload: AccountPasswordUpdateRead(ok=True),
     )
 
     with client_context() as client:

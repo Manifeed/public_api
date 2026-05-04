@@ -1,27 +1,28 @@
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from app.services.worker_release_service import list_desktop_releases
 
 from shared_backend.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
+from shared_backend.utils.public_url import build_public_url, require_public_base_url
 
 
 worker_release_router = APIRouter(prefix="/workers/api", tags=["workers-release"])
 
 
 @worker_release_router.get("/releases/desktop", response_model=WorkerDesktopReleaseListRead)
-def list_public_desktop_releases(request: Request) -> WorkerDesktopReleaseListRead:
+def list_public_desktop_releases() -> WorkerDesktopReleaseListRead:
     releases = list_desktop_releases()
-    base_url = str(request.base_url).rstrip("/")
+    public_base_url = require_public_base_url()
     return releases.model_copy(
         update={
             "items": [
                 item.model_copy(
                     update={
-                        "download_url": (
-                            f"{base_url}"
-                            f"{_resolve_download_path(item.artifact_name, item.download_url)}"
+                        "download_url": build_public_url(
+                            public_base_url,
+                            _resolve_download_path(item.artifact_name, item.download_url),
                         ),
                         "release_notes_url": item.release_notes_url,
                     }

@@ -28,6 +28,7 @@ def app_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "INTERNAL_SERVICE_TOKEN": "x" * 32,
         "REQUIRE_INTERNAL_SERVICE_TOKEN": "true",
         "CORS_ORIGINS": "http://frontend.test",
+        "PUBLIC_BASE_URL": "https://public.example.test",
         "CSRF_TRUSTED_ORIGINS": "http://frontend.test",
         "AUTH_SESSION_COOKIE_SECURE": "false",
         "RATE_LIMIT_REDIS_REQUIRED": "false",

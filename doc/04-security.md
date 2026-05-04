@@ -62,9 +62,15 @@ Protected flows:
 
 - auth register
 - auth login
+- account password update
 - account API key creation
 
-Register rate limits are scoped by IP, email, and pseudo.
+Gateway rate limits are identifier-based:
+
+- register: email + pseudo
+- login: email
+- account password: user ID
+- account API key creation: user ID
 
 Redis availability policy:
 
@@ -80,4 +86,4 @@ Behavior:
 - transport-level failures become upstream-service errors
 - JSON upstream error payloads are mapped into application-level responses
 - this gives callers a more consistent public error surface
-- structured request logs capture upstream target, latency, and failure class
+- structured request logs capture `request_id`, route template, upstream target, latency, and failure class

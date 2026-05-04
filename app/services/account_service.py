@@ -13,56 +13,55 @@ from shared_backend.schemas.account.account_schema import (
     UserApiKeyDeleteRead,
     UserApiKeyListRead,
 )
-from shared_backend.domain.current_user import AuthenticatedUserContext
 
 
-def read_account_me(*, current_user: AuthenticatedUserContext) -> AccountMeRead:
-    return get_required_user_service_client().read_account_me(current_user=current_user)
+def read_account_me(*, session_token: str) -> AccountMeRead:
+    return get_required_user_service_client().read_account_me(session_token=session_token)
 
 
 def update_account_profile(
     *,
-    current_user: AuthenticatedUserContext,
+    session_token: str,
     payload: AccountProfileUpdateRequestSchema,
 ) -> AccountProfileUpdateRead:
     return get_required_user_service_client().update_account_profile(
-        current_user=current_user,
+        session_token=session_token,
         payload=payload,
     )
 
 
 def update_account_password(
     *,
-    current_user: AuthenticatedUserContext,
+    session_token: str,
     payload: AccountPasswordUpdateRequestSchema,
 ) -> AccountPasswordUpdateRead:
     return get_required_user_service_client().update_account_password(
-        current_user=current_user,
+        session_token=session_token,
         payload=payload,
     )
 
 
-def read_account_api_keys(*, current_user: AuthenticatedUserContext) -> UserApiKeyListRead:
-    return get_required_user_service_client().read_account_api_keys(current_user=current_user)
+def read_account_api_keys(*, session_token: str) -> UserApiKeyListRead:
+    return get_required_user_service_client().read_account_api_keys(session_token=session_token)
 
 
 def create_account_api_key(
     *,
-    current_user: AuthenticatedUserContext,
+    session_token: str,
     payload: UserApiKeyCreateRequestSchema,
 ) -> UserApiKeyCreateRead:
     return get_required_user_service_client().create_account_api_key(
-        current_user=current_user,
+        session_token=session_token,
         payload=payload,
     )
 
 
 def delete_account_api_key(
     *,
-    current_user: AuthenticatedUserContext,
+    session_token: str,
     api_key_id: int,
 ) -> UserApiKeyDeleteRead:
     return get_required_user_service_client().delete_account_api_key(
-        current_user=current_user,
+        session_token=session_token,
         api_key_id=api_key_id,
     )

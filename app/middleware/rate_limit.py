@@ -8,11 +8,9 @@ from app.clients.networking.redis_networking_client import (
     RedisCommandError,
     RedisNetworkingClient,
 )
-from fastapi import Request
-
 from shared_backend.errors.custom_exceptions import RateLimitExceededError
+from shared_backend.utils.environment_utils import is_production_like_environment
 from app.observability.request_context import mark_rate_limit_blocked
-from app.utils.environment_utils import is_production_like_environment
 
 
 @dataclass
@@ -25,19 +23,18 @@ _memory_buckets: dict[str, _MemoryBucket] = {}
 
 
 def enforce_rate_limit(
-    request: Request,
     *,
     namespace: str,
+    identifier: str,
     limit: int,
     window_seconds: int,
-    identifier: str | None = None,
 ) -> None:
     if not is_rate_limit_enabled():
         return
 
     key = _build_rate_limit_key(
         namespace=namespace,
-        identifier=identifier or _client_identifier(request),
+        identifier=identifier,
     )
     count = _increment_redis_bucket(key, window_seconds)
     if count is None:
@@ -65,12 +62,6 @@ def is_redis_required_for_rate_limit() -> bool:
 def _build_rate_limit_key(*, namespace: str, identifier: str) -> str:
     safe_identifier = identifier.strip().lower() or "unknown"
     return f"manifeed:rate-limit:{namespace}:{safe_identifier}"
-
-
-def _client_identifier(request: Request) -> str:
-    if request.client and request.client.host:
-        return request.client.host
-    return "unknown"
 
 
 def _increment_memory_bucket(key: str, window_seconds: int) -> int:

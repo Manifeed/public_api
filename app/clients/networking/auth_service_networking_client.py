@@ -21,7 +21,7 @@ from shared_backend.schemas.auth.auth_schema import (
     AuthSessionRead,
 )
 from shared_backend.schemas.auth.session_schema import AuthLoginResult
-from shared_backend.schemas.internal.auth_service_schema import InternalAuthLoginRead
+from shared_backend.schemas.internal.auth_service_schema import InternalAuthLoginRead, InternalSessionTokenRequest
 
 
 class AuthServiceNetworkingClient:
@@ -47,11 +47,17 @@ class AuthServiceNetworkingClient:
         return cls(config, http_client=registry.auth if registry is not None else None)
 
     def register(self, payload: AuthRegisterRequestSchema) -> AuthRegisterRead:
-        response = self._post("/internal/auth/register", json=payload.model_dump(mode="json"))
+        response = self._post(
+            "/internal/auth/register",
+            json={"payload": payload.model_dump(mode="json")},
+        )
         return AuthRegisterRead.model_validate(response.json())
 
     def login(self, payload: AuthLoginRequestSchema) -> AuthLoginResult:
-        response = self._post("/internal/auth/login", json=payload.model_dump(mode="json"))
+        response = self._post(
+            "/internal/auth/login",
+            json={"payload": payload.model_dump(mode="json")},
+        )
         result = InternalAuthLoginRead.model_validate(response.json())
         return AuthLoginResult(
             session_token=result.session_token,
@@ -62,21 +68,21 @@ class AuthServiceNetworkingClient:
     def read_session(self, *, session_token: str) -> AuthSessionRead:
         response = self._post(
             "/internal/auth/session",
-            json={"payload": {"session_token": session_token}},
+            json={"payload": InternalSessionTokenRequest(session_token=session_token).model_dump(mode="json")},
         )
         return AuthSessionRead.model_validate(response.json())
 
     def resolve_session(self, *, session_token: str) -> InternalResolvedSessionRead:
         response = self._post(
             "/internal/auth/resolve-session",
-            json={"payload": {"session_token": session_token}},
+            json={"payload": InternalSessionTokenRequest(session_token=session_token).model_dump(mode="json")},
         )
         return InternalResolvedSessionRead.model_validate(response.json())
 
     def logout(self, *, session_token: str) -> AuthLogoutRead:
         response = self._post(
             "/internal/auth/logout",
-            json={"payload": {"session_token": session_token}},
+            json={"payload": InternalSessionTokenRequest(session_token=session_token).model_dump(mode="json")},
         )
         return AuthLogoutRead.model_validate(response.json())
 

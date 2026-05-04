@@ -11,7 +11,12 @@ from shared_backend.schemas.jobs.job_enqueue_schema import (
     RssScrapeJobCreateRequestSchema,
     SourceEmbeddingJobCreateRequestSchema,
 )
-from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
+from shared_backend.schemas.jobs.job_schema import (
+    JobControlCommandRead,
+    JobStatusRead,
+    JobTaskRead,
+    JobsOverviewRead,
+)
 from app.services import jobs_service
 
 
@@ -63,3 +68,23 @@ def read_job_tasks(job_id: str = Path(min_length=1)) -> list[JobTaskRead]:
 @jobs_router.get("/{job_id}", response_model=JobStatusRead)
 def read_job_status(job_id: str = Path(min_length=1)) -> JobStatusRead:
     return jobs_service.read_job_status(job_id=job_id)
+
+
+@jobs_router.post("/{job_id}/pause", response_model=JobStatusRead)
+def pause_job_route(job_id: str = Path(min_length=1)) -> JobStatusRead:
+    return jobs_service.pause_job(job_id=job_id)
+
+
+@jobs_router.post("/{job_id}/resume", response_model=JobStatusRead)
+def resume_job_route(job_id: str = Path(min_length=1)) -> JobStatusRead:
+    return jobs_service.resume_job(job_id=job_id)
+
+
+@jobs_router.post("/{job_id}/cancel", response_model=JobStatusRead)
+def cancel_job_route(job_id: str = Path(min_length=1)) -> JobStatusRead:
+    return jobs_service.cancel_job(job_id=job_id)
+
+
+@jobs_router.delete("/{job_id}", response_model=JobControlCommandRead)
+def delete_job_route(job_id: str = Path(min_length=1)) -> JobControlCommandRead:
+    return jobs_service.delete_job(job_id=job_id)

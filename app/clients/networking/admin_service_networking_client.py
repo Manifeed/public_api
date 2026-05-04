@@ -23,7 +23,12 @@ from shared_backend.schemas.jobs.job_enqueue_schema import (
     RssScrapeJobCreateRequestSchema,
     SourceEmbeddingJobCreateRequestSchema,
 )
-from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
+from shared_backend.schemas.jobs.job_schema import (
+    JobControlCommandRead,
+    JobStatusRead,
+    JobTaskRead,
+    JobsOverviewRead,
+)
 from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
 from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
 from shared_backend.schemas.rss.rss_enabled_toggle_schema import (
@@ -40,7 +45,14 @@ from shared_backend.schemas.admin.admin_user_schema import (
     AdminUserRead,
     AdminUserUpdateRequestSchema,
 )
+from shared_backend.domain.current_user import AuthenticatedUserContext
 from shared_backend.schemas.auth.auth_schema import UserRole
+from shared_backend.schemas.internal.user_service_schema import (
+    InternalAdminUserListFilters,
+    InternalAdminUserListRequest,
+    InternalAdminUserUpdateRequest,
+    InternalCurrentUserPayload,
+)
 
 
 class AdminServiceNetworkingClient:
@@ -64,6 +76,7 @@ class AdminServiceNetworkingClient:
     def read_admin_users(
         self,
         *,
+        current_user: AuthenticatedUserContext,
         role: UserRole | None,
         is_active: bool | None,
         api_access_enabled: bool | None,
@@ -71,23 +84,39 @@ class AdminServiceNetworkingClient:
         limit: int,
         offset: int,
     ) -> AdminUserListRead:
-        response = self._get(
-            "/internal/admin/users",
-            params={
-                "role": role,
-                "is_active": is_active,
-                "api_access_enabled": api_access_enabled,
-                "search": search,
-                "limit": limit,
-                "offset": offset,
+        response = self._post(
+            "/internal/admin/users/list",
+            json={
+                "payload": InternalAdminUserListRequest(
+                    current_user=_current_user_payload(current_user),
+                    filters=InternalAdminUserListFilters(
+                        role=role,
+                        is_active=is_active,
+                        api_access_enabled=api_access_enabled,
+                        search=search,
+                        limit=limit,
+                        offset=offset,
+                    ),
+                ).model_dump(mode="json", exclude_none=True)
             },
         )
         return AdminUserListRead.model_validate(response.json())
 
-    def update_admin_user(self, *, user_id: int, payload: AdminUserUpdateRequestSchema) -> AdminUserRead:
+    def update_admin_user(
+        self,
+        *,
+        current_user: AuthenticatedUserContext,
+        user_id: int,
+        payload: AdminUserUpdateRequestSchema,
+    ) -> AdminUserRead:
         response = self._patch(
             f"/internal/admin/users/{user_id}",
-            json=payload.model_dump(mode="json", exclude_none=True),
+            json={
+                "payload": InternalAdminUserUpdateRequest(
+                    current_user=_current_user_payload(current_user),
+                    payload=payload,
+                ).model_dump(mode="json", exclude_none=True)
+            },
         )
         return AdminUserRead.model_validate(response.json())
 
@@ -136,7 +165,7 @@ class AdminServiceNetworkingClient:
     ) -> RssFeedEnabledToggleRead:
         response = self._patch(
             f"/internal/admin/rss/feeds/{feed_id}/enabled",
-            json=payload.model_dump(mode="json"),
+            json={"payload": payload.model_dump(mode="json")},
         )
         return RssFeedEnabledToggleRead.model_validate(response.json())
 
@@ -148,7 +177,7 @@ class AdminServiceNetworkingClient:
     ) -> RssCompanyEnabledToggleRead:
         response = self._patch(
             f"/internal/admin/rss/companies/{company_id}/enabled",
-            json=payload.model_dump(mode="json"),
+            json={"payload": payload.model_dump(mode="json")},
         )
         return RssCompanyEnabledToggleRead.model_validate(response.json())
 
@@ -159,7 +188,7 @@ class AdminServiceNetworkingClient:
     def enqueue_rss_scrape_job(self, payload: RssScrapeJobCreateRequestSchema | None) -> JobEnqueueRead:
         response = self._post(
             "/internal/admin/jobs/rss-scrape",
-            json=(payload.model_dump(mode="json") if payload is not None else None),
+            json=({"payload": payload.model_dump(mode="json")} if payload is not None else None),
         )
         return JobEnqueueRead.model_validate(response.json())
 
@@ -169,7 +198,7 @@ class AdminServiceNetworkingClient:
     ) -> JobEnqueueRead:
         response = self._post(
             "/internal/admin/jobs/source-embedding",
-            json=(payload.model_dump(mode="json") if payload is not None else None),
+            json=({"payload": payload.model_dump(mode="json")} if payload is not None else None),
         )
         return JobEnqueueRead.model_validate(response.json())
 
@@ -178,7 +207,10 @@ class AdminServiceNetworkingClient:
         return JobAutomationRead.model_validate(response.json())
 
     def update_job_automation(self, payload: JobAutomationUpdateRequestSchema) -> JobAutomationRead:
-        response = self._patch("/internal/admin/jobs/automation", json=payload.model_dump(mode="json"))
+        response = self._patch(
+            "/internal/admin/jobs/automation",
+            json={"payload": payload.model_dump(mode="json")},
+        )
         return JobAutomationRead.model_validate(response.json())
 
     def list_job_tasks(self, *, job_id: str) -> list[JobTaskRead]:
@@ -188,6 +220,22 @@ class AdminServiceNetworkingClient:
     def read_job_status(self, *, job_id: str) -> JobStatusRead:
         response = self._get(f"/internal/admin/jobs/{job_id}")
         return JobStatusRead.model_validate(response.json())
+
+    def pause_job(self, *, job_id: str) -> JobStatusRead:
+        response = self._post(f"/internal/admin/jobs/{job_id}/pause")
+        return JobStatusRead.model_validate(response.json())
+
+    def resume_job(self, *, job_id: str) -> JobStatusRead:
+        response = self._post(f"/internal/admin/jobs/{job_id}/resume")
+        return JobStatusRead.model_validate(response.json())
+
+    def cancel_job(self, *, job_id: str) -> JobStatusRead:
+        response = self._post(f"/internal/admin/jobs/{job_id}/cancel")
+        return JobStatusRead.model_validate(response.json())
+
+    def delete_job(self, *, job_id: str) -> JobControlCommandRead:
+        response = self._delete(f"/internal/admin/jobs/{job_id}")
+        return JobControlCommandRead.model_validate(response.json())
 
     def read_internal_health(self) -> InternalServiceHealthRead:
         response = self._get("/internal/health")
@@ -218,6 +266,14 @@ class AdminServiceNetworkingClient:
             http_client=self._http_client,
         )
 
+    def _delete(self, path: str) -> httpx.Response:
+        return request_service(
+            config=self._config,
+            method="DELETE",
+            path=path,
+            http_client=self._http_client,
+        )
+
     def _patch(self, path: str, *, json: dict[str, Any]) -> httpx.Response:
         return request_service(
             config=self._config,
@@ -234,3 +290,14 @@ def get_admin_service_client() -> AdminServiceNetworkingClient | None:
 
 def get_required_admin_service_client() -> AdminServiceNetworkingClient:
     return require_service_client(get_admin_service_client(), env_name="ADMIN_SERVICE_URL")
+
+
+def _current_user_payload(current_user: AuthenticatedUserContext) -> InternalCurrentUserPayload:
+    return InternalCurrentUserPayload(
+        user_id=current_user.user_id,
+        email=current_user.email,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        api_access_enabled=current_user.api_access_enabled,
+        session_expires_at=current_user.session_expires_at,
+    )

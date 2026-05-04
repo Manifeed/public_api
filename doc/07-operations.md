@@ -5,12 +5,14 @@
 - set `APP_ENV=production` or an explicit production-like value
 - configure all required upstream URLs explicitly
 - configure `CORS_ORIGINS` and `CSRF_TRUSTED_ORIGINS` for the real frontend origins
+- configure `PUBLIC_BASE_URL` to the real edge origin used for public worker release URLs
 - configure a strong `INTERNAL_SERVICE_TOKEN` for internal upstream calls
 - keep `RATE_LIMIT_REDIS_REQUIRED=true` in production environments
 - route edge traffic only after `GET /internal/ready` returns `200`
 - keep `AUTH_SESSION_COOKIE_SECURE=true` behind TLS termination
 - monitor upstream latency and failure rates per internal service
-- ingest structured gateway logs for route, upstream target, status, and latency
+- let Nginx own coarse IP throttling and keep gateway limits scoped to business identifiers
+- ingest structured gateway logs with `request_id`, route template, upstream target, status, and latency
 
 ## Edge Contract
 

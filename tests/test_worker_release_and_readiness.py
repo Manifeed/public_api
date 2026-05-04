@@ -62,7 +62,7 @@ def test_worker_release_route_rewrites_download_url_but_keeps_release_notes(
     assert response.status_code == 200
     payload = response.json()
     assert payload["items"][0]["download_url"] == (
-        "http://testserver/workers/api/releases/download/manifeed-worker.deb"
+        "https://public.example.test/workers/api/releases/download/manifeed-worker.deb"
     )
     assert payload["items"][0]["release_notes_url"] == "https://notes.example/releases/1.2.3"
 

@@ -23,24 +23,15 @@ auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @auth_router.post("/register", response_model=AuthRegisterRead)
 def register_auth_user(
-    request: Request,
     payload: AuthRegisterRequestSchema,
 ) -> AuthRegisterRead:
     enforce_rate_limit(
-        request,
-        namespace="auth-register-ip",
-        limit=10,
-        window_seconds=3600,
-    )
-    enforce_rate_limit(
-        request,
         namespace="auth-register-email",
         identifier=payload.email.strip().lower(),
         limit=5,
         window_seconds=3600,
     )
     enforce_rate_limit(
-        request,
         namespace="auth-register-pseudo",
         identifier=payload.pseudo.strip().lower(),
         limit=5,
@@ -51,18 +42,10 @@ def register_auth_user(
 
 @auth_router.post("/login", response_model=AuthLoginRead)
 def login_auth_user(
-    request: Request,
     payload: AuthLoginRequestSchema,
     response: Response,
 ) -> AuthLoginRead:
     enforce_rate_limit(
-        request,
-        namespace="auth-login-ip",
-        limit=30,
-        window_seconds=300,
-    )
-    enforce_rate_limit(
-        request,
         namespace="auth-login-email",
         identifier=payload.email.strip().lower(),
         limit=10,

@@ -11,14 +11,14 @@ from shared_backend.schemas.auth.session_schema import AuthLoginResult
 from .conftest import client_context, override_authenticated_user
 
 
-def test_register_applies_ip_email_and_pseudo_rate_limits(
+def test_register_applies_email_and_pseudo_rate_limits(
     app_env,
     monkeypatch,
     sample_auth_user,
 ) -> None:
     calls: list[tuple[str, str | None]] = []
 
-    def fake_enforce_rate_limit(request, *, namespace, limit, window_seconds, identifier=None):
+    def fake_enforce_rate_limit(*, namespace, limit, window_seconds, identifier):
         calls.append((namespace, identifier))
 
     monkeypatch.setattr(auth_router, "enforce_rate_limit", fake_enforce_rate_limit)
@@ -41,7 +41,6 @@ def test_register_applies_ip_email_and_pseudo_rate_limits(
 
     assert response.status_code == 200
     assert calls == [
-        ("auth-register-ip", None),
         ("auth-register-email", "user@example.com"),
         ("auth-register-pseudo", "mypseudo"),
     ]

@@ -25,6 +25,12 @@
 	- `*` is rejected when credentials are enabled
 	- in development, defaults to `http://localhost:8080,http://localhost:3000`
 
+- `PUBLIC_BASE_URL`
+	- required absolute public base URL used when the gateway rewrites public worker release URLs
+
+- `ALLOWED_HOSTS`
+	- optional comma-separated extra `Host` values accepted by `TrustedHostMiddleware`
+
 - `CSRF_TRUSTED_ORIGINS`
 	- comma-separated trusted origins for CSRF checks
 

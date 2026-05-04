@@ -7,11 +7,11 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from shared_backend.errors.custom_exceptions import CsrfOriginDeniedError
-from app.observability.request_context import mark_csrf_denied
-from app.utils.environment_utils import (
+from shared_backend.utils.environment_utils import (
     is_development_environment,
     is_production_like_environment,
 )
+from app.observability.request_context import mark_csrf_denied
 
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}

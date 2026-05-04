@@ -1,26 +1,11 @@
 from __future__ import annotations
 
-from fastapi import Request
 import pytest
 
 from app.clients.networking.redis_networking_client import RedisCommandError
 from shared_backend.errors.custom_exceptions import InternalServiceAuthError, RateLimitExceededError
 from app.middleware import rate_limit
 from shared_backend.security.internal_service_auth import validate_internal_service_token_configuration
-
-
-def _request() -> Request:
-    return Request(
-        {
-            "type": "http",
-            "method": "GET",
-            "path": "/api/test",
-            "headers": [],
-            "client": ("127.0.0.1", 12345),
-            "scheme": "http",
-            "server": ("testserver", 80),
-        }
-    )
 
 
 def test_rate_limit_falls_back_to_memory_when_redis_is_optional(app_env, monkeypatch) -> None:
@@ -31,8 +16,8 @@ def test_rate_limit_falls_back_to_memory_when_redis_is_optional(app_env, monkeyp
     )
 
     rate_limit.enforce_rate_limit(
-        _request(),
         namespace="optional",
+        identifier="user@example.com",
         limit=2,
         window_seconds=60,
     )
@@ -48,8 +33,8 @@ def test_rate_limit_fails_closed_when_redis_is_required(app_env, monkeypatch) ->
 
     with pytest.raises(RateLimitExceededError):
         rate_limit.enforce_rate_limit(
-            _request(),
             namespace="strict",
+            identifier="user@example.com",
             limit=2,
             window_seconds=60,
         )
