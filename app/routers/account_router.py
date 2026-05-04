@@ -6,6 +6,7 @@ from app.dependencies.auth_dependencies import (
 )
 from app.middleware.rate_limit import enforce_rate_limit
 from app.services import account_service
+from app.services.auth_service import invalidate_auth_context_cache
 from app.utils.session_cookie import clear_session_cookie, get_session_token_from_request
 
 from shared_backend.schemas.account.account_schema import (
@@ -62,7 +63,8 @@ def update_account_password_route(
         session_token=get_session_token_from_request(request) or "",
         payload=payload,
     )
-    clear_session_cookie(response)
+    invalidate_auth_context_cache(session_token=get_session_token_from_request(request) or "")
+    clear_session_cookie(response, request)
     return result
 
 

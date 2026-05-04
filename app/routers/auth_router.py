@@ -42,6 +42,7 @@ def register_auth_user(
 
 @auth_router.post("/login", response_model=AuthLoginRead)
 def login_auth_user(
+    request: Request,
     payload: AuthLoginRequestSchema,
     response: Response,
 ) -> AuthLoginRead:
@@ -54,6 +55,7 @@ def login_auth_user(
     result = auth_service.login_auth_user(payload)
     set_session_cookie(
         response,
+        request,
         session_token=result.session_token,
         expires_at=result.expires_at,
     )
@@ -72,7 +74,7 @@ def logout_auth_user(
     result = auth_service.logout_auth_user(
         session_token=get_session_token_from_request(request) or "",
     )
-    clear_session_cookie(response)
+    clear_session_cookie(response, request)
     return result
 
 

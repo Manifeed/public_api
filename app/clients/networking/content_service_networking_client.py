@@ -11,9 +11,9 @@ from app.clients.networking.service_http_client import (
     request_service,
     require_service_client,
 )
-from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
 
 from shared_backend.schemas.analytics.analysis_schema import SimilarSourcesRead
+from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
 from shared_backend.schemas.sources.source_schema import (
     RssSourceDetailRead,
     RssSourcePageRead,

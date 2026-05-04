@@ -8,23 +8,8 @@ from app.middleware import rate_limit
 from shared_backend.security.internal_service_auth import validate_internal_service_token_configuration
 
 
-def test_rate_limit_falls_back_to_memory_when_redis_is_optional(app_env, monkeypatch) -> None:
-    monkeypatch.setattr(
-        rate_limit.RedisNetworkingClient,
-        "increment_with_ttl",
-        lambda self, key, ttl_seconds: (_ for _ in ()).throw(RedisCommandError("redis down")),
-    )
-
-    rate_limit.enforce_rate_limit(
-        namespace="optional",
-        identifier="user@example.com",
-        limit=2,
-        window_seconds=60,
-    )
-
-
-def test_rate_limit_fails_closed_when_redis_is_required(app_env, monkeypatch) -> None:
-    monkeypatch.setenv("RATE_LIMIT_REDIS_REQUIRED", "true")
+def test_rate_limit_fails_closed_when_redis_is_unreachable(app_env, monkeypatch) -> None:
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
     monkeypatch.setattr(
         rate_limit.RedisNetworkingClient,
         "increment_with_ttl",
@@ -40,10 +25,9 @@ def test_rate_limit_fails_closed_when_redis_is_required(app_env, monkeypatch) ->
         )
 
 
-def test_require_internal_service_token_true_overrides_dev_environment(app_env, monkeypatch) -> None:
-    monkeypatch.setenv("APP_ENV", "dev")
-    monkeypatch.setenv("REQUIRE_INTERNAL_SERVICE_TOKEN", "true")
+def test_internal_service_token_must_be_configured(app_env, monkeypatch) -> None:
     monkeypatch.delenv("INTERNAL_SERVICE_TOKEN", raising=False)
+    monkeypatch.delenv("INTERNAL_SERVICE_TOKENS", raising=False)
 
     with pytest.raises(InternalServiceAuthError):
         validate_internal_service_token_configuration()

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from datetime import datetime
 
 from fastapi import Request, Response
@@ -16,41 +15,40 @@ def get_session_token_from_request(request: Request) -> str | None:
     return None
 
 
+def infer_session_cookie_secure(request: Request) -> bool:
+    forwarded_proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
+    if forwarded_proto == "https":
+        return True
+    if forwarded_proto == "http":
+        return False
+    return request.url.scheme == "https"
+
+
 def set_session_cookie(
     response: Response,
+    request: Request,
     *,
     session_token: str,
     expires_at: datetime,
 ) -> None:
+    secure = infer_session_cookie_secure(request)
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=session_token,
         httponly=True,
         samesite=SESSION_COOKIE_SAMESITE,
-        secure=is_session_cookie_secure(),
+        secure=secure,
         path="/",
         expires=expires_at,
     )
 
 
-def clear_session_cookie(response: Response) -> None:
+def clear_session_cookie(response: Response, request: Request) -> None:
+    secure = infer_session_cookie_secure(request)
     response.delete_cookie(
         key=SESSION_COOKIE_NAME,
         httponly=True,
         samesite=SESSION_COOKIE_SAMESITE,
-        secure=is_session_cookie_secure(),
+        secure=secure,
         path="/",
     )
-
-
-def is_session_cookie_secure() -> bool:
-    for env_var in ("AUTH_SESSION_COOKIE_SECURE", "APP_ENV", "ENVIRONMENT", "NODE_ENV"):
-        raw_value = os.getenv(env_var)
-        if raw_value is None:
-            continue
-        normalized = raw_value.strip().lower()
-        if normalized in {"1", "true", "yes", "on", "prod", "production"}:
-            return True
-        if normalized in {"0", "false", "no", "off", "dev", "development", "local"}:
-            return False
-    return True

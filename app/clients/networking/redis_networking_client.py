@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import os
 
 from redis import Redis
@@ -57,6 +58,35 @@ class RedisNetworkingClient:
         except RedisError as exception:
             raise RedisCommandError(str(exception)) from exception
         return int(result)
+
+    def get_json(self, key: str) -> dict[str, object] | None:
+        try:
+            raw_value = self._redis_client.get(key)
+        except RedisError as exception:
+            raise RedisCommandError(str(exception)) from exception
+        if raw_value is None:
+            return None
+        try:
+            parsed_value = json.loads(raw_value)
+        except json.JSONDecodeError as exception:
+            raise RedisCommandError(str(exception)) from exception
+        if isinstance(parsed_value, dict):
+            return parsed_value
+        raise RedisCommandError("Redis JSON payload must be an object")
+
+    def set_json_with_ttl(self, key: str, value: dict[str, object], ttl_seconds: int) -> None:
+        if ttl_seconds <= 0:
+            raise RedisCommandError("Redis TTL must be positive")
+        try:
+            self._redis_client.setex(key, ttl_seconds, json.dumps(value, separators=(",", ":")))
+        except RedisError as exception:
+            raise RedisCommandError(str(exception)) from exception
+
+    def delete_key(self, key: str) -> None:
+        try:
+            self._redis_client.delete(key)
+        except RedisError as exception:
+            raise RedisCommandError(str(exception)) from exception
 
 
 def get_redis_client(config: RedisConnectionConfig | None = None) -> Redis:

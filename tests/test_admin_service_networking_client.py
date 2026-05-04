@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from typing import cast
 
 import httpx
 
@@ -9,6 +10,13 @@ from app.clients.networking.admin_service_networking_client import AdminServiceN
 from shared_backend.clients.service_http_client import ServiceClientConfig
 from shared_backend.domain.current_user import AuthenticatedUserContext
 from shared_backend.schemas.admin.admin_user_schema import AdminUserUpdateRequestSchema
+from shared_backend.schemas.auth.auth_schema import UserRole
+from shared_backend.schemas.internal.user_service_schema import (
+    InternalAdminUserListFilters,
+    InternalAdminUserListRequest,
+    InternalAdminUserUpdateRequest,
+    InternalCurrentUserPayload,
+)
 
 
 def _config() -> ServiceClientConfig:
@@ -58,26 +66,25 @@ def test_read_admin_users_wraps_current_user_and_filters(monkeypatch) -> None:
 
     assert response.total == 0
     assert seen["path"] == "/internal/admin/users/list"
-    assert seen["json"] == {
-        "payload": {
-            "current_user": {
-                "user_id": current_user.user_id,
-                "email": current_user.email,
-                "role": current_user.role,
-                "is_active": current_user.is_active,
-                "api_access_enabled": current_user.api_access_enabled,
-                "session_expires_at": current_user.session_expires_at.isoformat(),
-            },
-            "filters": {
-                "role": "user",
-                "is_active": True,
-                "api_access_enabled": False,
-                "search": "alice",
-                "limit": 10,
-                "offset": 5,
-            },
-        }
-    }
+    expected_payload = InternalAdminUserListRequest(
+        current_user=InternalCurrentUserPayload(
+            user_id=current_user.user_id,
+            email=current_user.email,
+            role=cast(UserRole, current_user.role),
+            is_active=current_user.is_active,
+            api_access_enabled=current_user.api_access_enabled,
+            session_expires_at=current_user.session_expires_at,
+        ),
+        filters=InternalAdminUserListFilters(
+            role=cast(UserRole, "user"),
+            is_active=True,
+            api_access_enabled=False,
+            search="alice",
+            limit=10,
+            offset=5,
+        ),
+    ).model_dump(mode="json", exclude_none=True)
+    assert seen["json"] == {"payload": expected_payload}
 
 
 def test_update_admin_user_wraps_current_user_and_payload(monkeypatch) -> None:
@@ -107,18 +114,15 @@ def test_update_admin_user_wraps_current_user_and_payload(monkeypatch) -> None:
 
     assert response.id == 3
     assert seen["path"] == "/internal/admin/users/3"
-    assert seen["json"] == {
-        "payload": {
-            "current_user": {
-                "user_id": current_user.user_id,
-                "email": current_user.email,
-                "role": current_user.role,
-                "is_active": current_user.is_active,
-                "api_access_enabled": current_user.api_access_enabled,
-                "session_expires_at": current_user.session_expires_at.isoformat(),
-            },
-            "payload": {
-                "is_active": False,
-            },
-        }
-    }
+    expected_payload = InternalAdminUserUpdateRequest(
+        current_user=InternalCurrentUserPayload(
+            user_id=current_user.user_id,
+            email=current_user.email,
+            role=cast(UserRole, current_user.role),
+            is_active=current_user.is_active,
+            api_access_enabled=current_user.api_access_enabled,
+            session_expires_at=current_user.session_expires_at,
+        ),
+        payload=payload,
+    ).model_dump(mode="json", exclude_none=True)
+    assert seen["json"] == {"payload": expected_payload}
