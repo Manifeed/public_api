@@ -258,6 +258,10 @@ Behavior:
 4. apply role or API-access checks
 5. call the target upstream service
 
+For `/api/account/*`, the target `user_service` receives the resolved
+current-user context over the internal service-authenticated request. The raw
+browser session token is not forwarded to `user_service`.
+
 ### Public RSS Image Flow
 
 1. accept public image request

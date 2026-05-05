@@ -12,11 +12,11 @@
 	- additional environment selector used by helpers
 
 - `INTERNAL_SERVICE_TOKEN`
-	- shared token sent to upstream internal services when configured
+	- strong shared token sent to upstream internal services
+	- required at startup, minimum 32 characters
 
-- `REQUIRE_INTERNAL_SERVICE_TOKEN`
-	- forces strict token expectations in token-validation helpers
-	- takes precedence over local/dev environment relaxation
+- `INTERNAL_SERVICE_TOKENS`
+	- optional comma-separated accepted tokens for rotation
 
 ## Browser and Security Settings
 
@@ -27,6 +27,7 @@
 
 - `PUBLIC_BASE_URL`
 	- required absolute public base URL used when the gateway rewrites public worker release URLs
+	- must use `https://` in production-like environments
 
 - `ALLOWED_HOSTS`
 	- optional comma-separated extra `Host` values accepted by `TrustedHostMiddleware`
@@ -36,11 +37,6 @@
 
 - `CSRF_TRUST_SELF_ORIGIN`
 	- explicitly trust or reject the request's own origin outside production-like environments
-
-- `AUTH_SESSION_COOKIE_SECURE`
-	- overrides secure-cookie behavior
-	- truthy values force `Secure=true`
-	- falsy values force `Secure=false`
 
 ## Upstream Service URLs
 

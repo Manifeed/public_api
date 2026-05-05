@@ -41,7 +41,11 @@ stable public API surface and orchestrate calls to upstream services.
 - `WORKER_SERVICE_URL`
 
 All upstream HTTP calls are made with the internal service header
-`x-manifeed-internal-token` when `INTERNAL_SERVICE_TOKEN` is configured.
+`x-manifeed-internal-token`; startup fails if no strong internal token is configured.
+
+Production traffic is expected to enter through:
+
+`Client -> Traefik HTTPS/domain -> nginx HTTP interne -> public_api -> services internes`
 
 ## Quick Start (Local Development)
 
@@ -60,6 +64,7 @@ export USER_SERVICE_URL=http://localhost:8002
 export ADMIN_SERVICE_URL=http://localhost:8003
 export CONTENT_SERVICE_URL=http://localhost:8004
 export WORKER_SERVICE_URL=http://localhost:8005
+export INTERNAL_SERVICE_TOKEN=replace-with-strong-secret-min-32-chars
 ```
 
 Optional settings for browser development:
@@ -97,6 +102,8 @@ Main entry points include:
   `manifeed_session`.
 - CSRF origin checks are applied to unsafe methods under `/api/`.
 - Sensitive routes resolve the current user through `auth_service`.
+- Account routes pass the resolved current-user context to `user_service`; the
+  browser session token is not forwarded to `user_service`.
 - Admin routes are guarded by admin-only dependencies.
 - Selected routes are rate-limited with Redis-backed counters or in-memory
   fallback in non-strict environments.
@@ -120,9 +127,8 @@ Main entry points include:
 - `ALLOWED_HOSTS`
 - `CSRF_TRUSTED_ORIGINS`
 - `CSRF_TRUST_SELF_ORIGIN`
-- `AUTH_SESSION_COOKIE_SECURE`
 - `INTERNAL_SERVICE_TOKEN`
-- `REQUIRE_INTERNAL_SERVICE_TOKEN`
+- `INTERNAL_SERVICE_TOKENS`
 
 ### Upstream service URLs
 

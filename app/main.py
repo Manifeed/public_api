@@ -27,8 +27,9 @@ from app.schemas.internal.service_schema import InternalServiceReadyRead
 from app.services.readiness_service import read_internal_ready
 
 from shared_backend.errors.exception_handlers import register_exception_handlers
+from shared_backend.security.internal_service_auth import validate_internal_service_token_configuration
 from shared_backend.schemas.internal.service_schema import InternalServiceHealthRead
-from shared_backend.utils.environment_utils import is_development_environment
+from shared_backend.utils.environment_utils import is_development_environment, is_production_like_environment
 from shared_backend.utils.logging_utils import configure_service_logging
 from shared_backend.utils.public_url import require_public_base_url, resolve_allowed_hosts
 
@@ -47,6 +48,7 @@ def _parse_cors_origins() -> Tuple[List[str], bool]:
 
 @asynccontextmanager
 async def _app_lifespan(_app: FastAPI):
+    validate_internal_service_token_configuration()
     initialize_service_http_client_registry()
     try:
         yield
@@ -57,7 +59,7 @@ async def _app_lifespan(_app: FastAPI):
 
 def create_app() -> FastAPI:
     configure_service_logging("public-api")
-    public_base_url = require_public_base_url()
+    public_base_url = require_public_base_url(require_https=is_production_like_environment())
     app = FastAPI(title="Manifeed Public API", lifespan=_app_lifespan)
     app.add_middleware(
         TrustedHostMiddleware,

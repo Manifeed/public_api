@@ -5,10 +5,7 @@ from app.clients.networking.service_http_client import require_service_client
 from app.observability.request_context import UpstreamCallTrace, record_upstream_call
 
 from shared_backend.clients.service_http_client import ServiceRequestTrace
-from shared_backend.clients.user_service_networking_client import (
-    INTERNAL_SESSION_TOKEN_HEADER,
-    UserServiceNetworkingClient,
-)
+from shared_backend.clients.user_service_networking_client import UserServiceNetworkingClient
 
 
 def _record_upstream_trace(trace: ServiceRequestTrace) -> None:
@@ -41,7 +38,6 @@ def get_required_user_service_client() -> UserServiceNetworkingClient:
 
 
 __all__ = [
-    "INTERNAL_SESSION_TOKEN_HEADER",
     "UserServiceNetworkingClient",
     "get_required_user_service_client",
     "get_user_service_client",

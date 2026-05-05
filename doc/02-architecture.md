@@ -46,6 +46,11 @@ Core guards:
 These dependencies resolve the current session through `auth_service` and apply
 role or feature-access checks before route handlers execute.
 
+For account routes, `public_api` resolves the session once and forwards the
+resulting current-user context to `user_service` over the internal authenticated
+service channel. `user_service` does not re-resolve the same session for these
+account calls.
+
 ## Service Layer
 
 Service modules are intentionally thin and forward calls to upstream clients:

@@ -3,9 +3,32 @@ from __future__ import annotations
 from app.dependencies import auth_dependencies
 from app.services import account_service
 
-from shared_backend.schemas.account.account_schema import AccountPasswordUpdateRead
+from shared_backend.schemas.account.account_schema import AccountMeRead, AccountPasswordUpdateRead
 
 from .conftest import client_context, override_authenticated_user
+
+
+def test_account_me_passes_resolved_current_user_to_user_service(
+    app_env,
+    monkeypatch,
+    authenticated_user,
+    sample_auth_user,
+) -> None:
+    seen: dict[str, object] = {}
+
+    def fake_read_account_me(*, current_user):
+        seen["current_user"] = current_user
+        return AccountMeRead(user=sample_auth_user)
+
+    monkeypatch.setattr(account_service, "read_account_me", fake_read_account_me)
+
+    with client_context() as client:
+        override_authenticated_user(client.app, authenticated_user)
+        client.cookies.set("manifeed_session", "session-token")
+        response = client.get("/api/account/me")
+
+    assert response.status_code == 200
+    assert seen["current_user"] is authenticated_user
 
 
 def test_account_password_clears_cookie_after_success(
@@ -16,7 +39,7 @@ def test_account_password_clears_cookie_after_success(
     monkeypatch.setattr(
         account_service,
         "update_account_password",
-        lambda *, session_token, payload: AccountPasswordUpdateRead(ok=True),
+        lambda *, current_user, payload: AccountPasswordUpdateRead(ok=True),
     )
 
     with client_context() as client:

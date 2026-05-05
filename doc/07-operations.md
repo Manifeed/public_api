@@ -5,11 +5,11 @@
 - set `APP_ENV=production` or an explicit production-like value
 - configure all required upstream URLs explicitly
 - configure `CORS_ORIGINS` and `CSRF_TRUSTED_ORIGINS` for the real frontend origins
-- configure `PUBLIC_BASE_URL` to the real edge origin used for public worker release URLs
+- configure `PUBLIC_BASE_URL` to the real HTTPS Traefik origin used for public worker release URLs
 - configure a strong `INTERNAL_SERVICE_TOKEN` for internal upstream calls
 - keep `RATE_LIMIT_REDIS_REQUIRED=true` in production environments
 - route edge traffic only after `GET /internal/ready` returns `200`
-- keep `AUTH_SESSION_COOKIE_SECURE=true` behind TLS termination
+- let Traefik terminate TLS, redirect HTTP to HTTPS, and set normalized `X-Forwarded-*` headers
 - monitor upstream latency and failure rates per internal service
 - let Nginx own coarse IP throttling and keep gateway limits scoped to business identifiers
 - ingest structured gateway logs with `request_id`, route template, upstream target, status, and latency
@@ -19,7 +19,8 @@
 - `/api/*` is served by `public_api` through Nginx
 - `/workers/api/*` is served directly by `worker_service` through Nginx
 - `public_api` still exposes `GET /workers/api/releases/desktop`, but release binaries are downloaded from the edge route backed by `worker_service`
-- proxy headers `X-Forwarded-*` are part of the trusted deployment model for CSRF/self-origin logic and secure cookie behavior
+- Traefik is the only public entrypoint; Nginx is an internal HTTP hop on the Traefik Docker network
+- proxy headers `X-Forwarded-*` are trusted only as Traefik-normalized headers for CSRF/self-origin logic and secure cookie behavior
 
 ## Known Constraints
 

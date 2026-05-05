@@ -13,7 +13,7 @@ security controls, and upstream orchestration.
 
 - Expose public auth routes for registration, login, logout, and session read
 - Resolve current-user context through `auth_service`
-- Forward account workflows to `user_service`
+- Forward account workflows to `user_service` with the resolved current-user context
 - Forward admin workflows to `admin_service`
 - Forward source and RSS read flows to `content_service`
 - Forward worker desktop release catalog reads to `worker_service`
