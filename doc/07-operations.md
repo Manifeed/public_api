@@ -25,7 +25,7 @@
 ## Known Constraints
 
 - public behavior depends directly on upstream service availability
-- readiness depends on the availability of the internal upstream `/internal/health` endpoints
+- readiness depends on the availability of internal upstream health/readiness endpoints
 - readiness returns `503` when a critical dependency or strict config check is not ready
 - optional rate-limit mode can still fall back to in-memory counters outside strict production settings
 

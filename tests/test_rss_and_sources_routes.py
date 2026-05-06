@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.clients.networking.content_service_networking_client import ContentImageRead
 from shared_backend.schemas.analytics.analysis_schema import SimilarSourceRead, SimilarSourcesRead
 from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
 from shared_backend.schemas.rss.rss_feed_schema import RssFeedRead
@@ -102,26 +101,6 @@ def test_admin_rss_routes_delegate_and_return_payload(
     assert feed_toggle_response.json() == {"feed_id": 9, "enabled": False}
     assert company_toggle_response.status_code == 200
     assert company_toggle_response.json() == {"company_id": 1, "enabled": False}
-
-
-def test_public_rss_icon_streams_content_and_filename(app_env, monkeypatch) -> None:
-    monkeypatch.setattr(
-        rss_service,
-        "read_rss_icon",
-        lambda *, icon_url: ContentImageRead(
-            content=b"<svg></svg>",
-            media_type="image/svg+xml",
-            filename="logo.svg",
-        ),
-    )
-
-    with client_context() as client:
-        response = client.get("/api/rss/img/assets/logo.svg")
-
-    assert response.status_code == 200
-    assert response.content == b"<svg></svg>"
-    assert response.headers["content-type"].startswith("image/svg+xml")
-    assert response.headers["content-disposition"] == 'attachment; filename="logo.svg"'
 
 
 def test_sources_routes_cover_user_and_admin_flows(

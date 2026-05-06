@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.clients.networking.user_service_networking_client import get_required_user_service_client
+from app.clients.providers.user_service_client_provider import get_required_user_service_client
 
 from shared_backend.domain.current_user import AuthenticatedUserContext
 from shared_backend.schemas.account.account_schema import (

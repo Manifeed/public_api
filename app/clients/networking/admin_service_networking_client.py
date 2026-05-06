@@ -12,7 +12,6 @@ from app.clients.networking.service_http_client import (
     require_service_client,
 )
 
-from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
 from shared_backend.schemas.health import HealthRead
 from shared_backend.schemas.jobs.job_automation_schema import (
     JobAutomationRead,
@@ -127,23 +126,6 @@ class AdminServiceNetworkingClient:
     def read_health(self) -> HealthRead:
         response = self._get("/internal/admin/health/")
         return HealthRead.model_validate(response.json())
-
-    def read_analysis_overview(self) -> AnalysisOverviewRead:
-        response = self._get("/internal/admin/analysis/overview")
-        return AnalysisOverviewRead.model_validate(response.json())
-
-    def read_similar_sources(
-        self,
-        *,
-        source_id: int,
-        limit: int,
-        worker_version: str | None,
-    ) -> SimilarSourcesRead:
-        response = self._get(
-            "/internal/admin/analysis/similar-sources",
-            params={"source_id": source_id, "limit": limit, "worker_version": worker_version},
-        )
-        return SimilarSourcesRead.model_validate(response.json())
 
     def list_rss_companies(self) -> list[RssCompanyRead]:
         response = self._get("/internal/admin/rss/companies")

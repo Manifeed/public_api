@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.clients.networking.auth_service_networking_client import get_required_auth_service_client
+from app.clients.providers.auth_service_client_provider import get_required_auth_service_client
 
 from shared_backend.schemas.auth.auth_schema import (
     AuthLoginRequestSchema,

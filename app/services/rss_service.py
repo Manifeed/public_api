@@ -1,8 +1,4 @@
 from app.clients.networking.admin_service_networking_client import get_required_admin_service_client
-from app.clients.networking.content_service_networking_client import (
-    ContentImageRead,
-    get_required_content_service_client,
-)
 
 from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
 from shared_backend.schemas.rss.rss_enabled_toggle_schema import (
@@ -46,7 +42,3 @@ def toggle_rss_company_enabled(
         company_id=company_id,
         payload=payload,
     )
-
-
-def read_rss_icon(*, icon_url: str) -> ContentImageRead:
-    return get_required_content_service_client().read_rss_icon(icon_url=icon_url)

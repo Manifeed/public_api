@@ -20,7 +20,7 @@ from app.routers.admin_dashboard_router import admin_analysis_router, admin_heal
 from app.routers.admin_router import admin_router
 from app.routers.auth_router import auth_router
 from app.routers.jobs_router import jobs_router
-from app.routers.rss_router import rss_admin_router, rss_public_router
+from app.routers.rss_router import rss_admin_router
 from app.routers.sources_router import admin_sources_router, user_sources_router
 from app.routers.worker_release_router import worker_release_router
 from app.schemas.internal.service_schema import InternalServiceReadyRead
@@ -86,7 +86,6 @@ def create_app() -> FastAPI:
     app.include_router(admin_analysis_router)
     app.include_router(jobs_router)
     app.include_router(rss_admin_router)
-    app.include_router(rss_public_router)
     app.include_router(admin_sources_router)
     app.include_router(user_sources_router)
     app.include_router(worker_release_router)

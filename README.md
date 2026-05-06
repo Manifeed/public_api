@@ -25,10 +25,11 @@ stable public API surface and orchestrate calls to upstream services.
 - `app/routers`: public and admin HTTP route layer
 - `app/dependencies`: authenticated/admin access guards
 - `app/services`: thin orchestration layer over internal clients
-- `app/clients/networking`: upstream HTTP clients and Redis rate-limit client
+- `app/clients/networking`: local upstream clients, HTTP transport helpers, and Redis rate-limit client
+- `app/clients/providers`: local adapters for shared upstream clients
 - `app/middleware`: CSRF and rate limiting
 - `app/utils`: environment helpers and session cookie helpers
-- `shared_backend`: shared schemas, domain models, error contracts, inter-service auth helpers, and HTTP client primitives
+- `shared_backend`: shared schemas, domain models, error contracts, inter-service auth helpers, and HTTP client primitives, including the shared `content_service` client
 
 ## Upstream Service Dependencies
 
@@ -93,7 +94,6 @@ Main entry points include:
 - `GET /api/account/me`
 - `GET /api/admin/users`
 - `GET /api/sources`
-- `GET /api/rss/img/{icon_url}`
 - `GET /workers/api/releases/desktop`
 
 ## Security Model

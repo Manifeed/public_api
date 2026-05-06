@@ -1,4 +1,5 @@
 from app.clients.networking.admin_service_networking_client import get_required_admin_service_client
+from app.clients.providers.content_service_client_provider import get_required_content_service_client
 
 from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourcesRead
 from shared_backend.schemas.health import HealthRead
@@ -9,7 +10,7 @@ def read_health() -> HealthRead:
 
 
 def read_analysis_overview() -> AnalysisOverviewRead:
-    return get_required_admin_service_client().read_analysis_overview()
+    return get_required_content_service_client().read_analysis_overview()
 
 
 def read_similar_sources(
@@ -18,7 +19,7 @@ def read_similar_sources(
     limit: int,
     worker_version: str | None,
 ) -> SimilarSourcesRead:
-    return get_required_admin_service_client().read_similar_sources(
+    return get_required_content_service_client().read_similar_sources(
         source_id=source_id,
         limit=limit,
         worker_version=worker_version,

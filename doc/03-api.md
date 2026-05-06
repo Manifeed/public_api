@@ -24,7 +24,7 @@ Behavior:
 - validates required upstream configuration
 - validates strict internal-token configuration
 - checks Redis reachability for rate limiting
-- pings each critical upstream service through `/internal/health`
+- pings each critical upstream service through its internal health/readiness endpoint
 
 HTTP status behavior:
 
@@ -219,15 +219,6 @@ Returns the user-facing source detail from `content_service`.
 Requires an authenticated session cookie.
 
 Returns similar-source analysis from `content_service`.
-
-### `GET /api/rss/img/{icon_url}`
-
-Returns RSS icon/image bytes streamed from `content_service`.
-
-Behavior:
-
-- preserves upstream content type when available
-- adds `content-disposition` when upstream filename is present
 
 ### `GET /workers/api/releases/desktop`
 

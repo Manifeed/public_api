@@ -1,4 +1,4 @@
-from app.clients.networking.content_service_networking_client import get_required_content_service_client
+from app.clients.providers.content_service_client_provider import get_required_content_service_client
 
 from shared_backend.schemas.analytics.analysis_schema import SimilarSourcesRead
 from shared_backend.schemas.sources.source_schema import (

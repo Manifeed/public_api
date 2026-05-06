@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import os
 
-from app.clients.networking.auth_service_networking_client import get_required_auth_service_client
+from app.clients.providers.auth_service_client_provider import get_required_auth_service_client
 from app.clients.networking.redis_networking_client import RedisCommandError, RedisNetworkingClient
 
 from shared_backend.domain.current_user import (
