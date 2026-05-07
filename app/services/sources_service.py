@@ -6,6 +6,7 @@ from shared_backend.schemas.sources.source_schema import (
     RssSourcePageRead,
     UserSourceDetailRead,
     UserSourcePageRead,
+    UserSourceSearchPageRead,
 )
 
 
@@ -60,6 +61,29 @@ def list_user_sources(*, limit: int, offset: int) -> UserSourcePageRead:
     return get_required_content_service_client().list_user_sources(limit=limit, offset=offset)
 
 
+def search_user_sources(
+    *,
+    q: str | None,
+    limit: int,
+    offset: int,
+    language: str | None,
+    publisher_id: int | None,
+    author_id: int | None,
+    published_from: str | None,
+    published_to: str | None,
+) -> UserSourceSearchPageRead:
+    return get_required_content_service_client().search_user_sources(
+        q=q,
+        limit=limit,
+        offset=offset,
+        language=language,
+        publisher_id=publisher_id,
+        author_id=author_id,
+        published_from=published_from,
+        published_to=published_to,
+    )
+
+
 def read_user_source(*, source_id: int) -> UserSourceDetailRead:
     return get_required_content_service_client().read_user_source(source_id=source_id)
 
@@ -68,10 +92,8 @@ def read_similar_sources(
     *,
     source_id: int,
     limit: int,
-    worker_version: str | None,
 ) -> SimilarSourcesRead:
     return get_required_content_service_client().read_similar_sources(
         source_id=source_id,
         limit=limit,
-        worker_version=worker_version,
     )

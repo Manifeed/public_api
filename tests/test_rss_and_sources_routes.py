@@ -13,6 +13,8 @@ from shared_backend.schemas.sources.source_schema import (
     UserSourceDetailRead,
     UserSourcePageRead,
     UserSourceRead,
+    UserSourceSearchItemRead,
+    UserSourceSearchPageRead,
 )
 from app.services import rss_service, sources_service
 
@@ -164,8 +166,30 @@ def test_sources_routes_cover_user_and_admin_flows(
     )
     similar = SimilarSourcesRead(
         source_id=21,
-        worker_version="worker-v1",
+        model_name="BAAI/bge-m3",
         items=[SimilarSourceRead(score=0.9, source=user_detail)],
+    )
+    search_page = UserSourceSearchPageRead(
+        raw_query="finance",
+        subject_query="finance",
+        applied_filters=[],
+        items=[
+            UserSourceSearchItemRead(
+                id=21,
+                title="User source",
+                authors=[],
+                url="https://example.com/user-source",
+                published_at=now,
+                company_names=["ACME"],
+                summary="summary",
+                feed_sections=["tech"],
+                score=0.12,
+                matched_by=["sparse"],
+            )
+        ],
+        limit=24,
+        offset=0,
+        has_more=False,
     )
     seen: dict[str, object] = {}
 
@@ -210,14 +234,19 @@ def test_sources_routes_cover_user_and_admin_flows(
             user_page,
         ),
     )
+    monkeypatch.setattr(
+        sources_service,
+        "search_user_sources",
+        lambda **kwargs: _capture(seen, "user_search", kwargs, search_page),
+    )
     monkeypatch.setattr(sources_service, "read_user_source", lambda *, source_id: user_detail)
     monkeypatch.setattr(
         sources_service,
         "read_similar_sources",
-        lambda *, source_id, limit, worker_version: _capture(
+        lambda *, source_id, limit: _capture(
             seen,
             "similar",
-            {"source_id": source_id, "limit": limit, "worker_version": worker_version},
+            {"source_id": source_id, "limit": limit},
             similar,
         ),
     )
@@ -232,10 +261,21 @@ def test_sources_routes_cover_user_and_admin_flows(
         admin_company_response = client.get("/api/admin/sources/companies/3", params={"limit": 20})
         admin_source_response = client.get("/api/admin/sources/11")
         user_sources_response = client.get("/api/sources/")
+        user_search_response = client.get(
+            "/api/sources/search",
+            params={
+                "q": "finance",
+                "language": "fr",
+                "publisher_id": 4,
+                "author_id": 8,
+                "published_from": "2026-01-01",
+                "published_to": "2026-01-31",
+            },
+        )
         user_source_response = client.get("/api/sources/21")
         similar_response = client.get(
             "/api/sources/21/similar",
-            params={"limit": 5, "worker_version": "worker-v1"},
+            params={"limit": 5},
         )
 
     assert admin_sources_response.status_code == 200
@@ -250,11 +290,23 @@ def test_sources_routes_cover_user_and_admin_flows(
     assert user_sources_response.status_code == 200
     assert user_sources_response.json()["items"][0]["id"] == 21
     assert seen["user_sources"] == {"limit": 24, "offset": 0}
+    assert user_search_response.status_code == 200
+    assert user_search_response.json()["items"][0]["matched_by"] == ["sparse"]
+    assert seen["user_search"] == {
+        "q": "finance",
+        "limit": 24,
+        "offset": 0,
+        "language": "fr",
+        "publisher_id": 4,
+        "author_id": 8,
+        "published_from": "2026-01-01",
+        "published_to": "2026-01-31",
+    }
     assert user_source_response.status_code == 200
     assert user_source_response.json()["summary"] == "summary"
     assert similar_response.status_code == 200
     assert similar_response.json()["items"][0]["score"] == 0.9
-    assert seen["similar"] == {"source_id": 21, "limit": 5, "worker_version": "worker-v1"}
+    assert seen["similar"] == {"source_id": 21, "limit": 5}
 
 
 def _store_and_return(

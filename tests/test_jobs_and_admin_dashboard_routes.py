@@ -55,7 +55,7 @@ def test_admin_dashboard_routes_return_service_payloads(
     )
     similar = SimilarSourcesRead(
         source_id=88,
-        worker_version="worker-v2",
+        model_name="BAAI/bge-m3",
         items=[SimilarSourceRead(score=0.91, source=source_detail)],
     )
     seen: dict[str, object] = {}
@@ -65,10 +65,10 @@ def test_admin_dashboard_routes_return_service_payloads(
     monkeypatch.setattr(
         admin_dashboard_service,
         "read_similar_sources",
-        lambda *, source_id, limit, worker_version: _capture(
+        lambda *, source_id, limit: _capture(
             seen,
             "similar",
-            {"source_id": source_id, "limit": limit, "worker_version": worker_version},
+            {"source_id": source_id, "limit": limit},
             similar,
         ),
     )
@@ -79,7 +79,7 @@ def test_admin_dashboard_routes_return_service_payloads(
         overview_response = client.get("/api/admin/analysis/overview")
         similar_response = client.get(
             "/api/admin/analysis/similar-sources",
-            params={"source_id": 88, "limit": 7, "worker_version": "worker-v2"},
+            params={"source_id": 88, "limit": 7},
         )
 
     assert health_response.status_code == 200
@@ -88,7 +88,7 @@ def test_admin_dashboard_routes_return_service_payloads(
     assert overview_response.json()["indexed_embeddings"] == 95
     assert similar_response.status_code == 200
     assert similar_response.json()["items"][0]["source"]["id"] == 88
-    assert seen["similar"] == {"source_id": 88, "limit": 7, "worker_version": "worker-v2"}
+    assert seen["similar"] == {"source_id": 88, "limit": 7}
 
 
 def test_jobs_routes_cover_overview_enqueue_automation_and_details(

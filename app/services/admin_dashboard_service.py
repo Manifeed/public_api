@@ -17,10 +17,8 @@ def read_similar_sources(
     *,
     source_id: int,
     limit: int,
-    worker_version: str | None,
 ) -> SimilarSourcesRead:
     return get_required_content_service_client().read_similar_sources(
         source_id=source_id,
         limit=limit,
-        worker_version=worker_version,
     )
