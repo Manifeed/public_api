@@ -265,11 +265,10 @@ def test_sources_routes_cover_user_and_admin_flows(
             "/api/sources/search",
             params={
                 "q": "finance",
-                "language": "fr",
-                "publisher_id": 4,
+                "country": "fr",
+                "company_id": 4,
                 "author_id": 8,
-                "published_from": "2026-01-01",
-                "published_to": "2026-01-31",
+                "period": "24h",
             },
         )
         user_source_response = client.get("/api/sources/21")
@@ -296,17 +295,26 @@ def test_sources_routes_cover_user_and_admin_flows(
         "q": "finance",
         "limit": 24,
         "offset": 0,
-        "language": "fr",
-        "publisher_id": 4,
+        "country": "fr",
+        "company_id": 4,
         "author_id": 8,
-        "published_from": "2026-01-01",
-        "published_to": "2026-01-31",
+        "period": "24h",
     }
     assert user_source_response.status_code == 200
     assert user_source_response.json()["summary"] == "summary"
     assert similar_response.status_code == 200
     assert similar_response.json()["items"][0]["score"] == 0.9
     assert seen["similar"] == {"source_id": 21, "limit": 5}
+
+
+def test_user_source_search_rejects_removed_language_filter(client_context, authenticated_user) -> None:
+    with client_context() as client:
+        override_authenticated_user(client.app, authenticated_user)
+        client.cookies.set("manifeed_session", "session-token")
+
+        response = client.get("/api/sources/search", params={"q": "finance", "language": "fr"})
+
+    assert response.status_code == 422
 
 
 def _store_and_return(

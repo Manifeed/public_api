@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 
 from app.dependencies.auth_dependencies import require_authenticated_user, require_masked_admin_user
 from app.services import sources_service
@@ -11,6 +11,16 @@ from shared_backend.schemas.sources.source_schema import (
     UserSourcePageRead,
     UserSourceSearchPageRead,
 )
+
+_SOURCE_SEARCH_QUERY_PARAMS = {
+    "q",
+    "limit",
+    "offset",
+    "country",
+    "company_id",
+    "author_id",
+    "period",
+}
 
 
 admin_sources_router = APIRouter(
@@ -79,25 +89,37 @@ def read_user_sources(
 
 @user_sources_router.get("/search", response_model=UserSourceSearchPageRead)
 def search_user_sources(
+    request: Request,
     q: str | None = Query(default=None, max_length=500),
     limit: int = Query(default=24, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    language: str | None = Query(default=None, min_length=2, max_length=16),
-    publisher_id: int | None = Query(default=None, ge=1),
+    country: str | None = Query(default=None, min_length=2, max_length=2),
+    company_id: int | None = Query(default=None, ge=1),
     author_id: int | None = Query(default=None, ge=1),
-    published_from: str | None = Query(default=None, min_length=1, max_length=40),
-    published_to: str | None = Query(default=None, min_length=1, max_length=40),
+    period: str | None = Query(
+        default="all",
+        pattern="^(all|ALL|1h|1H|24h|24H|7d|7D|1m|1M|1y|1Y)$",
+    ),
 ) -> UserSourceSearchPageRead:
+    _reject_unknown_search_params(request)
     return sources_service.search_user_sources(
         q=q,
         limit=limit,
         offset=offset,
-        language=language,
-        publisher_id=publisher_id,
+        country=country,
+        company_id=company_id,
         author_id=author_id,
-        published_from=published_from,
-        published_to=published_to,
+        period=period,
     )
+
+
+def _reject_unknown_search_params(request: Request) -> None:
+    unknown_params = sorted(set(request.query_params) - _SOURCE_SEARCH_QUERY_PARAMS)
+    if unknown_params:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported search query parameter(s): {', '.join(unknown_params)}",
+        )
 
 
 @user_sources_router.get("/{source_id}/similar", response_model=SimilarSourcesRead)
