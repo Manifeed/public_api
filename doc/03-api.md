@@ -220,17 +220,6 @@ Requires an authenticated session cookie.
 
 Returns similar-source analysis from `content_service`.
 
-### `GET /workers/api/releases/desktop`
-
-Returns the public worker desktop release catalog from `worker_service`.
-
-Behavior:
-
-- reads the desktop release list from `worker_service`
-- rewrites only `download_url` with `PUBLIC_BASE_URL`
-- keeps upstream `release_notes_url` unchanged
-- the downloadable artifacts themselves are served by `worker_service` through the edge Nginx split route, not by `public_api`
-
 ## Runtime Flows
 
 ### Browser Login Flow

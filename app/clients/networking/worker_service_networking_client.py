@@ -21,7 +21,6 @@ from shared_backend.schemas.jobs.job_enqueue_schema import (
     SourceEmbeddingJobCreateRequestSchema,
 )
 from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
-from shared_backend.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
 from shared_backend.schemas.internal.worker_service_schema import WorkerServiceStatsRead
 
 class WorkerServiceNetworkingClient:
@@ -130,15 +129,6 @@ class WorkerServiceNetworkingClient:
             http_client=self._http_client,
         )
         return JobStatusRead.model_validate(response.json())
-
-    def list_desktop_releases(self) -> WorkerDesktopReleaseListRead:
-        response = request_service(
-            config=self._config,
-            method="GET",
-            path="/workers/api/releases/desktop",
-            http_client=self._http_client,
-        )
-        return WorkerDesktopReleaseListRead.model_validate(response.json())
 
     def read_internal_health(self) -> InternalServiceHealthRead:
         response = request_service(

@@ -24,7 +24,6 @@ Mounted routers:
 - `rss_admin_router` -> `/api/admin/rss`
 - `admin_sources_router` -> `/api/admin/sources`
 - `user_sources_router` -> `/api/sources`
-- `worker_release_router` -> `/workers/api`
 
 Health route:
 
@@ -62,7 +61,6 @@ Service modules are intentionally thin and forward calls to upstream clients:
 - `jobs_service.py`
 - `rss_service.py`
 - `sources_service.py`
-- `worker_release_service.py`
 
 ## Client Layer
 

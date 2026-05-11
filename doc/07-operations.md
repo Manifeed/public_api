@@ -18,7 +18,6 @@
 
 - `/api/*` is served by `public_api` through Nginx
 - `/workers/api/*` is served directly by `worker_service` through Nginx
-- `public_api` still exposes `GET /workers/api/releases/desktop`, but release binaries are downloaded from the edge route backed by `worker_service`
 - Traefik is the only public entrypoint; Nginx is an internal HTTP hop on the Traefik Docker network
 - proxy headers `X-Forwarded-*` are trusted only as Traefik-normalized headers for CSRF/self-origin logic and secure cookie behavior
 

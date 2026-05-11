@@ -15,7 +15,6 @@ stable public API surface and orchestrate calls to upstream services.
 - Account routes backed by `user_service`
 - Admin routes backed by `admin_service`
 - Source and RSS read routes backed by `content_service`
-- Worker desktop release catalog route backed by `worker_service`
 - Readiness endpoint for production orchestration
 - Public concerns only: CORS, CSRF, upstream error mapping, and rate limiting
 
@@ -94,7 +93,6 @@ Main entry points include:
 - `GET /api/account/me`
 - `GET /api/admin/users`
 - `GET /api/sources`
-- `GET /workers/api/releases/desktop`
 
 ## Security Model
 
@@ -162,8 +160,8 @@ python -m pytest -q
 ```
 
 Coverage includes gateway route tests for auth/session flows, CSRF, masked
-admin access, RSS and sources routes, jobs and admin dashboard routes, worker
-release URL rewriting, readiness, and rate-limit/security behavior.
+admin access, RSS and sources routes, jobs and admin dashboard routes,
+readiness, and rate-limit/security behavior.
 
 ## Docker
 
@@ -200,8 +198,6 @@ or configuration check fails.
 
 - `/api/*` is served by `public_api` through Nginx.
 - `/workers/api/*` is served directly by `worker_service` through Nginx.
-- `GET /workers/api/releases/desktop` returns edge-routable `download_url`
-  values, but the binary download itself is not served by `public_api`.
 - `release_notes_url` is preserved from `worker_service`; `public_api` does not
   fabricate a `/workers` page.
 

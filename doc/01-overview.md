@@ -16,7 +16,6 @@ security controls, and upstream orchestration.
 - Forward account workflows to `user_service` with the resolved current-user context
 - Forward admin workflows to `admin_service`
 - Forward source and RSS read flows to `content_service`
-- Forward worker desktop release catalog reads to `worker_service`
 - Apply CORS, CSRF, rate limiting, and upstream error mapping
 
 ## Technical Stack

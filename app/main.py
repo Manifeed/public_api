@@ -16,13 +16,13 @@ from app.clients.networking.service_client_registry import (
 from app.middleware.csrf_middleware import csrf_origin_middleware
 from app.middleware.observability_middleware import observability_middleware
 from app.routers.account_router import account_router
+from app.routers.install_router import install_router
 from app.routers.admin_dashboard_router import admin_analysis_router, admin_health_router
 from app.routers.admin_router import admin_router
 from app.routers.auth_router import auth_router
 from app.routers.jobs_router import jobs_router
 from app.routers.rss_router import rss_admin_router
 from app.routers.sources_router import admin_sources_router, user_sources_router
-from app.routers.worker_release_router import worker_release_router
 from app.schemas.internal.service_schema import InternalServiceReadyRead
 from app.services.readiness_service import read_internal_ready
 
@@ -79,6 +79,7 @@ def create_app() -> FastAPI:
     app.middleware("http")(observability_middleware)
     app.middleware("http")(csrf_origin_middleware)
 
+    app.include_router(install_router)
     app.include_router(auth_router)
     app.include_router(account_router)
     app.include_router(admin_router)
@@ -88,7 +89,6 @@ def create_app() -> FastAPI:
     app.include_router(rss_admin_router)
     app.include_router(admin_sources_router)
     app.include_router(user_sources_router)
-    app.include_router(worker_release_router)
 
     @app.get("/internal/health", response_model=InternalServiceHealthRead)
     def read_internal_health() -> InternalServiceHealthRead:
