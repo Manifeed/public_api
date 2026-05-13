@@ -107,8 +107,8 @@ Main entry points include:
   fallback in non-strict environments.
 - Nginx owns the coarse IP-based rate limits; `public_api` only applies
   identifier-based limits such as email, pseudo, and user ID.
-- Public worker release URLs are derived from `PUBLIC_BASE_URL`, not the
-  incoming `Host` header.
+- Public absolute URLs and host validation derive from `PUBLIC_BASE_URL`, not
+  the incoming `Host` header.
 - Structured request logs include a propagated `X-Request-ID`, route template,
   latency, and upstream call traces without dumping raw query strings.
 - Upstream internal requests can include `x-manifeed-internal-token`.
@@ -198,8 +198,8 @@ or configuration check fails.
 
 - `/api/*` is served by `public_api` through Nginx.
 - `/workers/api/*` is served directly by `worker_service` through Nginx.
-- `release_notes_url` is preserved from `worker_service`; `public_api` does not
-  fabricate a `/workers` page.
+- `crawler_rss` installation is served by `/install/*`; release asset discovery
+  itself happens directly against GitHub.
 
 ## Detailed Documentation
 

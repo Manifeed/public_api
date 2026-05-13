@@ -75,4 +75,4 @@ Recommended next tests:
 - CSRF middleware tests
 - dependency tests for admin and API-access guards
 - upstream client contract tests with mocked responses
-- worker release URL rewrite tests
+- crawler install script tests

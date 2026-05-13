@@ -26,7 +26,7 @@
 	- in development, defaults to `http://localhost:8080,http://localhost:3000`
 
 - `PUBLIC_BASE_URL`
-	- required absolute public base URL used when the gateway rewrites public worker release URLs
+	- required absolute public base URL used for canonical host validation and public URL derivation
 	- must use `https://` in production-like environments
 
 - `ALLOWED_HOSTS`

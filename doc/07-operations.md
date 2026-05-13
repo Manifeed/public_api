@@ -5,7 +5,7 @@
 - set `APP_ENV=production` or an explicit production-like value
 - configure all required upstream URLs explicitly
 - configure `CORS_ORIGINS` and `CSRF_TRUSTED_ORIGINS` for the real frontend origins
-- configure `PUBLIC_BASE_URL` to the real HTTPS Traefik origin used for public worker release URLs
+- configure `PUBLIC_BASE_URL` to the real HTTPS Traefik origin
 - configure a strong `INTERNAL_SERVICE_TOKEN` for internal upstream calls
 - keep `RATE_LIMIT_REDIS_REQUIRED=true` in production environments
 - route edge traffic only after `GET /internal/ready` returns `200`
