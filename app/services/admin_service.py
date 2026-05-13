@@ -8,11 +8,13 @@ from shared_backend.schemas.admin.admin_user_schema import (
     AdminUserRead,
     AdminUserUpdateRequestSchema,
 )
+from shared_backend.domain.current_user import AuthenticatedUserContext
 from shared_backend.schemas.auth.auth_schema import UserRole
 
 
 def read_admin_users(
     *,
+    current_user: AuthenticatedUserContext,
     role: UserRole | None,
     is_active: bool | None,
     api_access_enabled: bool | None,
@@ -21,6 +23,7 @@ def read_admin_users(
     offset: int,
 ) -> AdminUserListRead:
     return get_required_admin_service_client().read_admin_users(
+        current_user=current_user,
         role=role,
         is_active=is_active,
         api_access_enabled=api_access_enabled,
@@ -32,10 +35,12 @@ def read_admin_users(
 
 def update_admin_user(
     *,
+    current_user: AuthenticatedUserContext,
     user_id: int,
     payload: AdminUserUpdateRequestSchema,
 ) -> AdminUserRead:
     return get_required_admin_service_client().update_admin_user(
+        current_user=current_user,
         user_id=user_id,
         payload=payload,
     )

@@ -6,7 +6,8 @@ from app.dependencies.auth_dependencies import (
 )
 from app.middleware.rate_limit import enforce_rate_limit
 from app.services import account_service
-from app.utils.session_cookie import clear_session_cookie
+from app.services.auth_service import invalidate_auth_context_cache
+from app.utils.session_cookie import clear_session_cookie, get_session_token_from_request
 
 from shared_backend.schemas.account.account_schema import (
     AccountMeRead,
@@ -27,7 +28,9 @@ account_router = APIRouter(prefix="/api/account", tags=["account"])
 def read_account_me_route(
     current_user=Depends(require_authenticated_user),
 ) -> AccountMeRead:
-    return account_service.read_account_me(current_user=current_user)
+    return account_service.read_account_me(
+        current_user=current_user,
+    )
 
 
 @account_router.patch("/me", response_model=AccountProfileUpdateRead)
@@ -43,15 +46,23 @@ def update_account_me_route(
 
 @account_router.patch("/password", response_model=AccountPasswordUpdateRead)
 def update_account_password_route(
+    request: Request,
     payload: AccountPasswordUpdateRequestSchema,
     response: Response,
     current_user=Depends(require_authenticated_user),
 ) -> AccountPasswordUpdateRead:
+    enforce_rate_limit(
+        namespace="account-password-user",
+        identifier=str(current_user.user_id),
+        limit=5,
+        window_seconds=3600,
+    )
     result = account_service.update_account_password(
         current_user=current_user,
         payload=payload,
     )
-    clear_session_cookie(response)
+    invalidate_auth_context_cache(session_token=get_session_token_from_request(request) or "")
+    clear_session_cookie(response, request)
     return result
 
 
@@ -59,7 +70,9 @@ def update_account_password_route(
 def read_account_api_keys_route(
     current_user=Depends(require_masked_api_enabled_user),
 ) -> UserApiKeyListRead:
-    return account_service.read_account_api_keys(current_user=current_user)
+    return account_service.read_account_api_keys(
+        current_user=current_user,
+    )
 
 
 @account_router.post("/api-keys", response_model=UserApiKeyCreateRead)
@@ -69,7 +82,6 @@ def create_account_api_key_route(
     current_user=Depends(require_masked_api_enabled_user),
 ) -> UserApiKeyCreateRead:
     enforce_rate_limit(
-        request,
         namespace="account-api-key-create-user",
         identifier=str(current_user.user_id),
         limit=5,

@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
-from fastapi.responses import Response
 
 from app.dependencies.auth_dependencies import require_masked_admin_user
 from app.services import rss_service
@@ -21,7 +20,6 @@ rss_admin_router = APIRouter(
     tags=["rss"],
     dependencies=[Depends(require_masked_admin_user)],
 )
-rss_public_router = APIRouter(prefix="/api/rss", tags=["rss"])
 
 
 @rss_admin_router.get("/companies", response_model=list[RssCompanyRead])
@@ -57,12 +55,3 @@ def update_rss_company_enabled(
     company_id: Annotated[int, Path(ge=1)],
 ) -> RssCompanyEnabledToggleRead:
     return rss_service.toggle_rss_company_enabled(company_id=company_id, payload=payload)
-
-
-@rss_public_router.get("/img/{icon_url:path}")
-def read_rss_icon(icon_url: str) -> Response:
-    image = rss_service.read_rss_icon(icon_url=icon_url)
-    headers = {}
-    if image.filename:
-        headers["content-disposition"] = f'attachment; filename="{image.filename}"'
-    return Response(content=image.content, media_type=image.media_type or "image/svg+xml", headers=headers)

@@ -21,7 +21,6 @@ from shared_backend.schemas.jobs.job_enqueue_schema import (
     SourceEmbeddingJobCreateRequestSchema,
 )
 from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead
-from shared_backend.schemas.workers.worker_release_schema import WorkerDesktopReleaseListRead
 from shared_backend.schemas.internal.worker_service_schema import WorkerServiceStatsRead
 
 class WorkerServiceNetworkingClient:
@@ -73,7 +72,7 @@ class WorkerServiceNetworkingClient:
             config=self._config,
             method="POST",
             path="/internal/jobs/rss-scrape",
-            json=(payload.model_dump(mode="json") if payload is not None else None),
+            json=({"payload": payload.model_dump(mode="json")} if payload is not None else None),
             http_client=self._http_client,
         )
         return JobEnqueueRead.model_validate(response.json())
@@ -86,7 +85,7 @@ class WorkerServiceNetworkingClient:
             config=self._config,
             method="POST",
             path="/internal/jobs/source-embedding",
-            json=(payload.model_dump(mode="json") if payload is not None else None),
+            json=({"payload": payload.model_dump(mode="json")} if payload is not None else None),
             http_client=self._http_client,
         )
         return JobEnqueueRead.model_validate(response.json())
@@ -108,7 +107,7 @@ class WorkerServiceNetworkingClient:
             config=self._config,
             method="PATCH",
             path="/internal/jobs/automation",
-            json=payload.model_dump(mode="json"),
+            json={"payload": payload.model_dump(mode="json")},
             http_client=self._http_client,
         )
         return JobAutomationRead.model_validate(response.json())
@@ -130,15 +129,6 @@ class WorkerServiceNetworkingClient:
             http_client=self._http_client,
         )
         return JobStatusRead.model_validate(response.json())
-
-    def list_desktop_releases(self) -> WorkerDesktopReleaseListRead:
-        response = request_service(
-            config=self._config,
-            method="GET",
-            path="/workers/api/releases/desktop",
-            http_client=self._http_client,
-        )
-        return WorkerDesktopReleaseListRead.model_validate(response.json())
 
     def read_internal_health(self) -> InternalServiceHealthRead:
         response = request_service(

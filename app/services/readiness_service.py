@@ -3,12 +3,12 @@ from __future__ import annotations
 from time import perf_counter
 
 from app.clients.networking.admin_service_networking_client import get_admin_service_client
-from app.clients.networking.auth_service_networking_client import get_auth_service_client
-from app.clients.networking.content_service_networking_client import get_content_service_client
+from app.clients.providers.auth_service_client_provider import get_auth_service_client
+from app.clients.providers.content_service_client_provider import get_content_service_client
 from app.clients.networking.redis_networking_client import RedisCommandError, RedisNetworkingClient
-from app.clients.networking.user_service_networking_client import get_user_service_client
+from app.clients.providers.user_service_client_provider import get_user_service_client
 from app.clients.networking.worker_service_networking_client import get_worker_service_client
-from app.middleware.rate_limit import is_rate_limit_enabled, is_redis_required_for_rate_limit
+from app.middleware.rate_limit import is_rate_limit_enabled
 from app.schemas.internal.service_schema import (
     InternalServiceReadyDependencyRead,
     InternalServiceReadyRead,
@@ -76,7 +76,8 @@ def _check_http_service(name: str, kind: str, client, *, env_name: str) -> Inter
         )
 
     try:
-        response = client.read_internal_health()
+        readiness_reader = getattr(client, "read_internal_ready", None)
+        response = readiness_reader() if callable(readiness_reader) else client.read_internal_health()
         status = "ready" if response.status in {"ok", "ready"} else "not_ready"
         return InternalServiceReadyDependencyRead(
             name=name,
@@ -109,8 +110,6 @@ def _check_redis_dependency() -> InternalServiceReadyDependencyRead:
     try:
         ping_response = RedisNetworkingClient().ping()
         detail = f"ping={ping_response.lower()}"
-        if not is_redis_required_for_rate_limit():
-            detail = f"{detail} fallback_allowed"
         return InternalServiceReadyDependencyRead(
             name="redis",
             kind="redis",
@@ -119,15 +118,11 @@ def _check_redis_dependency() -> InternalServiceReadyDependencyRead:
             latency_ms=_elapsed_milliseconds(started_at),
         )
     except (RedisCommandError, RuntimeError) as exception:
-        status = "not_ready" if is_redis_required_for_rate_limit() else "ready"
-        detail = str(exception)
-        if status == "ready":
-            detail = f"{detail} fallback_allowed"
         return InternalServiceReadyDependencyRead(
             name="redis",
             kind="redis",
-            status=status,
-            detail=detail,
+            status="not_ready",
+            detail=str(exception),
             latency_ms=_elapsed_milliseconds(started_at),
         )
 

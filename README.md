@@ -15,7 +15,6 @@ stable public API surface and orchestrate calls to upstream services.
 - Account routes backed by `user_service`
 - Admin routes backed by `admin_service`
 - Source and RSS read routes backed by `content_service`
-- Worker desktop release catalog route backed by `worker_service`
 - Readiness endpoint for production orchestration
 - Public concerns only: CORS, CSRF, upstream error mapping, and rate limiting
 
@@ -25,10 +24,11 @@ stable public API surface and orchestrate calls to upstream services.
 - `app/routers`: public and admin HTTP route layer
 - `app/dependencies`: authenticated/admin access guards
 - `app/services`: thin orchestration layer over internal clients
-- `app/clients/networking`: upstream HTTP clients and Redis rate-limit client
+- `app/clients/networking`: local upstream clients, HTTP transport helpers, and Redis rate-limit client
+- `app/clients/providers`: local adapters for shared upstream clients
 - `app/middleware`: CSRF and rate limiting
 - `app/utils`: environment helpers and session cookie helpers
-- `shared_backend`: shared schemas, domain models, error contracts, inter-service auth helpers, and HTTP client primitives
+- `shared_backend`: shared schemas, domain models, error contracts, inter-service auth helpers, and HTTP client primitives, including the shared `content_service` client
 
 ## Upstream Service Dependencies
 
@@ -41,7 +41,11 @@ stable public API surface and orchestrate calls to upstream services.
 - `WORKER_SERVICE_URL`
 
 All upstream HTTP calls are made with the internal service header
-`x-manifeed-internal-token` when `INTERNAL_SERVICE_TOKEN` is configured.
+`x-manifeed-internal-token`; startup fails if no strong internal token is configured.
+
+Production traffic is expected to enter through:
+
+`Client -> Traefik HTTPS/domain -> nginx HTTP interne -> public_api -> services internes`
 
 ## Quick Start (Local Development)
 
@@ -60,6 +64,7 @@ export USER_SERVICE_URL=http://localhost:8002
 export ADMIN_SERVICE_URL=http://localhost:8003
 export CONTENT_SERVICE_URL=http://localhost:8004
 export WORKER_SERVICE_URL=http://localhost:8005
+export INTERNAL_SERVICE_TOKEN=replace-with-strong-secret-min-32-chars
 ```
 
 Optional settings for browser development:
@@ -67,6 +72,7 @@ Optional settings for browser development:
 ```bash
 export CORS_ORIGINS=http://localhost:3000,http://localhost:8080
 export CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:8080
+export PUBLIC_BASE_URL=http://localhost
 export REDIS_URL=redis://localhost:6379/0
 ```
 
@@ -87,8 +93,6 @@ Main entry points include:
 - `GET /api/account/me`
 - `GET /api/admin/users`
 - `GET /api/sources`
-- `GET /api/rss/img/{icon_url}`
-- `GET /workers/api/releases/desktop`
 
 ## Security Model
 
@@ -96,9 +100,17 @@ Main entry points include:
   `manifeed_session`.
 - CSRF origin checks are applied to unsafe methods under `/api/`.
 - Sensitive routes resolve the current user through `auth_service`.
+- Account routes pass the resolved current-user context to `user_service`; the
+  browser session token is not forwarded to `user_service`.
 - Admin routes are guarded by admin-only dependencies.
 - Selected routes are rate-limited with Redis-backed counters or in-memory
   fallback in non-strict environments.
+- Nginx owns the coarse IP-based rate limits; `public_api` only applies
+  identifier-based limits such as email, pseudo, and user ID.
+- Public worker release URLs are derived from `PUBLIC_BASE_URL`, not the
+  incoming `Host` header.
+- Structured request logs include a propagated `X-Request-ID`, route template,
+  latency, and upstream call traces without dumping raw query strings.
 - Upstream internal requests can include `x-manifeed-internal-token`.
 - Password changes clear the browser cookie while `user_service` revokes
   active server-side sessions.
@@ -109,11 +121,12 @@ Main entry points include:
 
 - `APP_ENV` / `ENVIRONMENT` / `NODE_ENV`
 - `CORS_ORIGINS`
+- `PUBLIC_BASE_URL`
+- `ALLOWED_HOSTS`
 - `CSRF_TRUSTED_ORIGINS`
 - `CSRF_TRUST_SELF_ORIGIN`
-- `AUTH_SESSION_COOKIE_SECURE`
 - `INTERNAL_SERVICE_TOKEN`
-- `REQUIRE_INTERNAL_SERVICE_TOKEN`
+- `INTERNAL_SERVICE_TOKENS`
 
 ### Upstream service URLs
 
@@ -147,8 +160,8 @@ python -m pytest -q
 ```
 
 Coverage includes gateway route tests for auth/session flows, CSRF, masked
-admin access, RSS and sources routes, jobs and admin dashboard routes, worker
-release URL rewriting, readiness, and rate-limit/security behavior.
+admin access, RSS and sources routes, jobs and admin dashboard routes,
+readiness, and rate-limit/security behavior.
 
 ## Docker
 
@@ -171,6 +184,7 @@ docker run --rm -p 8000:8000 \
 	-e INTERNAL_SERVICE_TOKEN='replace-with-strong-secret-min-32-chars' \
 	-e CORS_ORIGINS='https://app.example.com' \
 	-e CSRF_TRUSTED_ORIGINS='https://app.example.com' \
+	-e PUBLIC_BASE_URL='https://app.example.com' \
 	manifeed-public-api
 ```
 
@@ -184,8 +198,6 @@ or configuration check fails.
 
 - `/api/*` is served by `public_api` through Nginx.
 - `/workers/api/*` is served directly by `worker_service` through Nginx.
-- `GET /workers/api/releases/desktop` returns edge-routable `download_url`
-  values, but the binary download itself is not served by `public_api`.
 - `release_notes_url` is preserved from `worker_service`; `public_api` does not
   fabricate a `/workers` page.
 

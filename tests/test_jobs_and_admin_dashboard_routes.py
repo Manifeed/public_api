@@ -7,7 +7,13 @@ from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRea
 from shared_backend.schemas.health import HealthRead, HealthServiceRead
 from shared_backend.schemas.jobs.job_automation_schema import JobAutomationRead
 from shared_backend.schemas.jobs.job_enqueue_schema import JobEnqueueRead
-from shared_backend.schemas.jobs.job_schema import JobStatusRead, JobTaskRead, JobsOverviewRead, JobOverviewItemRead
+from shared_backend.schemas.jobs.job_schema import (
+    JobControlCommandRead,
+    JobOverviewItemRead,
+    JobStatusRead,
+    JobTaskRead,
+    JobsOverviewRead,
+)
 from shared_backend.schemas.sources.source_schema import UserSourceDetailRead
 
 from .conftest import client_context, override_masked_admin_user
@@ -49,7 +55,7 @@ def test_admin_dashboard_routes_return_service_payloads(
     )
     similar = SimilarSourcesRead(
         source_id=88,
-        worker_version="worker-v2",
+        model_name="BAAI/bge-m3",
         items=[SimilarSourceRead(score=0.91, source=source_detail)],
     )
     seen: dict[str, object] = {}
@@ -59,10 +65,10 @@ def test_admin_dashboard_routes_return_service_payloads(
     monkeypatch.setattr(
         admin_dashboard_service,
         "read_similar_sources",
-        lambda *, source_id, limit, worker_version: _capture(
+        lambda *, source_id, limit: _capture(
             seen,
             "similar",
-            {"source_id": source_id, "limit": limit, "worker_version": worker_version},
+            {"source_id": source_id, "limit": limit},
             similar,
         ),
     )
@@ -73,7 +79,7 @@ def test_admin_dashboard_routes_return_service_payloads(
         overview_response = client.get("/api/admin/analysis/overview")
         similar_response = client.get(
             "/api/admin/analysis/similar-sources",
-            params={"source_id": 88, "limit": 7, "worker_version": "worker-v2"},
+            params={"source_id": 88, "limit": 7},
         )
 
     assert health_response.status_code == 200
@@ -82,7 +88,7 @@ def test_admin_dashboard_routes_return_service_payloads(
     assert overview_response.json()["indexed_embeddings"] == 95
     assert similar_response.status_code == 200
     assert similar_response.json()["items"][0]["source"]["id"] == 88
-    assert seen["similar"] == {"source_id": 88, "limit": 7, "worker_version": "worker-v2"}
+    assert seen["similar"] == {"source_id": 88, "limit": 7}
 
 
 def test_jobs_routes_cover_overview_enqueue_automation_and_details(
@@ -156,6 +162,12 @@ def test_jobs_routes_cover_overview_enqueue_automation_and_details(
         item_total=11,
         finalized_at=None,
     )
+    deleted_job = JobControlCommandRead(
+        ok=True,
+        job_id="job-1",
+        status=None,
+        deleted=True,
+    )
     seen: dict[str, object] = {}
 
     monkeypatch.setattr(
@@ -189,6 +201,26 @@ def test_jobs_routes_cover_overview_enqueue_automation_and_details(
         "read_job_status",
         lambda *, job_id: _capture(seen, "status_job_id", job_id, job_status),
     )
+    monkeypatch.setattr(
+        jobs_service,
+        "pause_job",
+        lambda *, job_id: _capture(seen, "pause_job_id", job_id, job_status.model_copy(update={"status": "paused"})),
+    )
+    monkeypatch.setattr(
+        jobs_service,
+        "resume_job",
+        lambda *, job_id: _capture(seen, "resume_job_id", job_id, job_status),
+    )
+    monkeypatch.setattr(
+        jobs_service,
+        "cancel_job",
+        lambda *, job_id: _capture(seen, "cancel_job_id", job_id, job_status.model_copy(update={"status": "cancelled"})),
+    )
+    monkeypatch.setattr(
+        jobs_service,
+        "delete_job",
+        lambda *, job_id: _capture(seen, "delete_job_id", job_id, deleted_job),
+    )
 
     with client_context() as client:
         override_masked_admin_user(client.app, admin_user)
@@ -211,6 +243,22 @@ def test_jobs_routes_cover_overview_enqueue_automation_and_details(
         )
         tasks_response = client.get("/api/admin/jobs/job-1/tasks")
         status_response = client.get("/api/admin/jobs/job-1")
+        pause_response = client.post(
+            "/api/admin/jobs/job-1/pause",
+            headers={"origin": "http://frontend.test"},
+        )
+        resume_response = client.post(
+            "/api/admin/jobs/job-1/resume",
+            headers={"origin": "http://frontend.test"},
+        )
+        cancel_response = client.post(
+            "/api/admin/jobs/job-1/cancel",
+            headers={"origin": "http://frontend.test"},
+        )
+        delete_response = client.delete(
+            "/api/admin/jobs/job-1",
+            headers={"origin": "http://frontend.test"},
+        )
 
     assert overview_response.status_code == 200
     assert overview_response.json()["items"][0]["job_id"] == "job-1"
@@ -229,6 +277,18 @@ def test_jobs_routes_cover_overview_enqueue_automation_and_details(
     assert status_response.status_code == 200
     assert status_response.json()["status"] == "processing"
     assert seen["status_job_id"] == "job-1"
+    assert pause_response.status_code == 200
+    assert pause_response.json()["status"] == "paused"
+    assert seen["pause_job_id"] == "job-1"
+    assert resume_response.status_code == 200
+    assert resume_response.json()["status"] == "processing"
+    assert seen["resume_job_id"] == "job-1"
+    assert cancel_response.status_code == 200
+    assert cancel_response.json()["status"] == "cancelled"
+    assert seen["cancel_job_id"] == "job-1"
+    assert delete_response.status_code == 200
+    assert delete_response.json()["deleted"] is True
+    assert seen["delete_job_id"] == "job-1"
 
 
 def _capture(

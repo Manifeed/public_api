@@ -7,7 +7,7 @@ Session cookie settings:
 - cookie name: `manifeed_session`
 - `HttpOnly`: enabled
 - `SameSite`: `Lax`
-- `Secure`: enabled by default, configurable through environment
+- `Secure`: inferred from `X-Forwarded-Proto=https`, normally set by Traefik
 - path: `/`
 
 The session token is read from the cookie, not from a public bearer header.
@@ -36,6 +36,7 @@ Trusted-origin behavior:
 Current-user resolution:
 
 - authenticated routes call `auth_service` to resolve the current session
+- account routes forward that resolved context to `user_service` instead of sending the raw session token again
 - admin routes require `role == "admin"`
 - API key routes require `api_access_enabled == true`
 
@@ -52,9 +53,19 @@ Outbound internal-service header:
 
 Behavior:
 
-- the header is added to upstream HTTP calls when `INTERNAL_SERVICE_TOKEN` is configured
+- the service fails startup if no strong internal token is configured
+- the header is added to upstream HTTP calls from the configured token
 - token comparison logic comes from `shared_backend/security/internal_service_auth.py`
-- `REQUIRE_INTERNAL_SERVICE_TOKEN=true` always forces strict validation, even in local-like environments
+
+## Traefik and Edge Trust
+
+Production traffic is expected to flow through:
+
+`Client -> Traefik HTTPS/domain -> nginx HTTP interne -> public_api -> services internes`
+
+Traefik owns TLS termination, HTTP-to-HTTPS redirects, domain routing, and
+normalization of `X-Forwarded-*` headers. Nginx is not exposed publicly by the
+default compose stack and relays the trusted forwarded headers to `public_api`.
 
 ## Rate Limiting Security
 
@@ -62,9 +73,15 @@ Protected flows:
 
 - auth register
 - auth login
+- account password update
 - account API key creation
 
-Register rate limits are scoped by IP, email, and pseudo.
+Gateway rate limits are identifier-based:
+
+- register: email + pseudo
+- login: email
+- account password: user ID
+- account API key creation: user ID
 
 Redis availability policy:
 
@@ -80,4 +97,4 @@ Behavior:
 - transport-level failures become upstream-service errors
 - JSON upstream error payloads are mapped into application-level responses
 - this gives callers a more consistent public error surface
-- structured request logs capture upstream target, latency, and failure class
+- structured request logs capture `request_id`, route template, upstream target, latency, and failure class

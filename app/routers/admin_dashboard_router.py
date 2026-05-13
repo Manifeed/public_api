@@ -33,10 +33,8 @@ def read_analysis_overview() -> AnalysisOverviewRead:
 def read_similar_sources(
     source_id: int = Query(ge=1),
     limit: int = Query(default=10, ge=1, le=20),
-    worker_version: str | None = Query(default=None, min_length=1, max_length=80),
 ) -> SimilarSourcesRead:
     return admin_dashboard_service.read_similar_sources(
         source_id=source_id,
         limit=limit,
-        worker_version=worker_version,
     )

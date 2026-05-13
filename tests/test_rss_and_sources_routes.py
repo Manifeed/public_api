@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.clients.networking.content_service_networking_client import ContentImageRead
 from shared_backend.schemas.analytics.analysis_schema import SimilarSourceRead, SimilarSourcesRead
 from shared_backend.schemas.rss.rss_company_schema import RssCompanyRead
 from shared_backend.schemas.rss.rss_feed_schema import RssFeedRead
@@ -14,6 +13,8 @@ from shared_backend.schemas.sources.source_schema import (
     UserSourceDetailRead,
     UserSourcePageRead,
     UserSourceRead,
+    UserSourceSearchItemRead,
+    UserSourceSearchPageRead,
 )
 from app.services import rss_service, sources_service
 
@@ -104,26 +105,6 @@ def test_admin_rss_routes_delegate_and_return_payload(
     assert company_toggle_response.json() == {"company_id": 1, "enabled": False}
 
 
-def test_public_rss_icon_streams_content_and_filename(app_env, monkeypatch) -> None:
-    monkeypatch.setattr(
-        rss_service,
-        "read_rss_icon",
-        lambda *, icon_url: ContentImageRead(
-            content=b"<svg></svg>",
-            media_type="image/svg+xml",
-            filename="logo.svg",
-        ),
-    )
-
-    with client_context() as client:
-        response = client.get("/api/rss/img/assets/logo.svg")
-
-    assert response.status_code == 200
-    assert response.content == b"<svg></svg>"
-    assert response.headers["content-type"].startswith("image/svg+xml")
-    assert response.headers["content-disposition"] == 'attachment; filename="logo.svg"'
-
-
 def test_sources_routes_cover_user_and_admin_flows(
     app_env,
     monkeypatch,
@@ -185,8 +166,30 @@ def test_sources_routes_cover_user_and_admin_flows(
     )
     similar = SimilarSourcesRead(
         source_id=21,
-        worker_version="worker-v1",
+        model_name="BAAI/bge-m3",
         items=[SimilarSourceRead(score=0.9, source=user_detail)],
+    )
+    search_page = UserSourceSearchPageRead(
+        raw_query="finance",
+        subject_query="finance",
+        applied_filters=[],
+        items=[
+            UserSourceSearchItemRead(
+                id=21,
+                title="User source",
+                authors=[],
+                url="https://example.com/user-source",
+                published_at=now,
+                company_names=["ACME"],
+                summary="summary",
+                feed_sections=["tech"],
+                score=0.12,
+                matched_by=["sparse"],
+            )
+        ],
+        limit=24,
+        offset=0,
+        has_more=False,
     )
     seen: dict[str, object] = {}
 
@@ -231,14 +234,19 @@ def test_sources_routes_cover_user_and_admin_flows(
             user_page,
         ),
     )
+    monkeypatch.setattr(
+        sources_service,
+        "search_user_sources",
+        lambda **kwargs: _capture(seen, "user_search", kwargs, search_page),
+    )
     monkeypatch.setattr(sources_service, "read_user_source", lambda *, source_id: user_detail)
     monkeypatch.setattr(
         sources_service,
         "read_similar_sources",
-        lambda *, source_id, limit, worker_version: _capture(
+        lambda *, source_id, limit: _capture(
             seen,
             "similar",
-            {"source_id": source_id, "limit": limit, "worker_version": worker_version},
+            {"source_id": source_id, "limit": limit},
             similar,
         ),
     )
@@ -253,10 +261,20 @@ def test_sources_routes_cover_user_and_admin_flows(
         admin_company_response = client.get("/api/admin/sources/companies/3", params={"limit": 20})
         admin_source_response = client.get("/api/admin/sources/11")
         user_sources_response = client.get("/api/sources/")
+        user_search_response = client.get(
+            "/api/sources/search",
+            params={
+                "q": "finance",
+                "country": "fr",
+                "company_id": 4,
+                "author_id": 8,
+                "period": "24h",
+            },
+        )
         user_source_response = client.get("/api/sources/21")
         similar_response = client.get(
             "/api/sources/21/similar",
-            params={"limit": 5, "worker_version": "worker-v1"},
+            params={"limit": 5},
         )
 
     assert admin_sources_response.status_code == 200
@@ -271,11 +289,32 @@ def test_sources_routes_cover_user_and_admin_flows(
     assert user_sources_response.status_code == 200
     assert user_sources_response.json()["items"][0]["id"] == 21
     assert seen["user_sources"] == {"limit": 24, "offset": 0}
+    assert user_search_response.status_code == 200
+    assert user_search_response.json()["items"][0]["matched_by"] == ["sparse"]
+    assert seen["user_search"] == {
+        "q": "finance",
+        "limit": 24,
+        "offset": 0,
+        "country": "fr",
+        "company_id": 4,
+        "author_id": 8,
+        "period": "24h",
+    }
     assert user_source_response.status_code == 200
     assert user_source_response.json()["summary"] == "summary"
     assert similar_response.status_code == 200
     assert similar_response.json()["items"][0]["score"] == 0.9
-    assert seen["similar"] == {"source_id": 21, "limit": 5, "worker_version": "worker-v1"}
+    assert seen["similar"] == {"source_id": 21, "limit": 5}
+
+
+def test_user_source_search_rejects_removed_language_filter(client_context, authenticated_user) -> None:
+    with client_context() as client:
+        override_authenticated_user(client.app, authenticated_user)
+        client.cookies.set("manifeed_session", "session-token")
+
+        response = client.get("/api/sources/search", params={"q": "finance", "language": "fr"})
+
+    assert response.status_code == 422
 
 
 def _store_and_return(

@@ -22,9 +22,10 @@ def read_admin_users_route(
     search: str | None = Query(default=None, min_length=1, max_length=320),
     limit: int = Query(default=100, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    _current_user=Depends(require_masked_admin_user),
+    current_user=Depends(require_masked_admin_user),
 ) -> AdminUserListRead:
     return admin_service.read_admin_users(
+        current_user=current_user,
         role=role,
         is_active=is_active,
         api_access_enabled=api_access_enabled,
@@ -38,9 +39,10 @@ def read_admin_users_route(
 def update_admin_user_route(
     payload: AdminUserUpdateRequestSchema,
     user_id: int = Path(ge=1),
-    _current_user=Depends(require_masked_admin_user),
+    current_user=Depends(require_masked_admin_user),
 ) -> AdminUserRead:
     return admin_service.update_admin_user(
+        current_user=current_user,
         user_id=user_id,
         payload=payload,
     )

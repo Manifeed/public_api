@@ -24,7 +24,7 @@ Behavior:
 - validates required upstream configuration
 - validates strict internal-token configuration
 - checks Redis reachability for rate limiting
-- pings each critical upstream service through `/internal/health`
+- pings each critical upstream service through its internal health/readiness endpoint
 
 HTTP status behavior:
 
@@ -56,11 +56,10 @@ Creates a user through `auth_service`.
 Behavior:
 
 - forwards the payload to `auth_service`
-- applies IP-based, email-based, and pseudo-based rate limiting before forwarding
+- applies email-based and pseudo-based rate limiting before forwarding
 
 Rate limits:
 
-- IP: 10 requests / 1 hour
 - Email: 5 requests / 1 hour
 - Pseudo: 5 requests / 1 hour
 
@@ -70,14 +69,13 @@ Authenticates a user through `auth_service` and sets the public session cookie.
 
 Behavior:
 
-- applies IP-based and email-based rate limiting
+- applies email-based rate limiting
 - forwards credentials to `auth_service`
 - stores the returned session token in `manifeed_session`
 - returns session expiration and user payload, but not the raw session token
 
 Rate limits:
 
-- IP: 30 requests / 5 minutes
 - Email: 10 requests / 5 minutes
 
 ### `POST /api/auth/logout`
@@ -124,8 +122,13 @@ Updates the current account password through `user_service`.
 Behavior:
 
 - forwards the password-change request to `user_service`
+- rate-limits password changes by current user ID
 - `user_service` revokes active server-side sessions
 - clears the browser session cookie after success
+
+Rate limits:
+
+- User: 5 requests / 1 hour
 
 ### `GET /api/account/api-keys`
 
@@ -177,6 +180,10 @@ All admin routes require admin access through masked admin dependency checks.
 - `PATCH /api/admin/jobs/automation`
 - `GET /api/admin/jobs/{job_id}`
 - `GET /api/admin/jobs/{job_id}/tasks`
+- `POST /api/admin/jobs/{job_id}/pause`
+- `POST /api/admin/jobs/{job_id}/resume`
+- `POST /api/admin/jobs/{job_id}/cancel`
+- `DELETE /api/admin/jobs/{job_id}`
 
 ### RSS
 
@@ -213,26 +220,6 @@ Requires an authenticated session cookie.
 
 Returns similar-source analysis from `content_service`.
 
-### `GET /api/rss/img/{icon_url}`
-
-Returns RSS icon/image bytes streamed from `content_service`.
-
-Behavior:
-
-- preserves upstream content type when available
-- adds `content-disposition` when upstream filename is present
-
-### `GET /workers/api/releases/desktop`
-
-Returns the public worker desktop release catalog from `worker_service`.
-
-Behavior:
-
-- reads the desktop release list from `worker_service`
-- rewrites only `download_url` to the current public base URL
-- keeps upstream `release_notes_url` unchanged
-- the downloadable artifacts themselves are served by `worker_service` through the edge Nginx split route, not by `public_api`
-
 ## Runtime Flows
 
 ### Browser Login Flow
@@ -250,6 +237,10 @@ Behavior:
 3. build current-user context
 4. apply role or API-access checks
 5. call the target upstream service
+
+For `/api/account/*`, the target `user_service` receives the resolved
+current-user context over the internal service-authenticated request. The raw
+browser session token is not forwarded to `user_service`.
 
 ### Public RSS Image Flow
 
