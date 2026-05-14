@@ -45,7 +45,7 @@ All upstream HTTP calls are made with the internal service header
 
 Production traffic is expected to enter through:
 
-`Client -> Traefik HTTPS/domain -> nginx HTTP interne -> public_api -> services internes`
+`Client -> Traefik HTTPS/domain -> nginx internal HTTP -> public_api -> internal services`
 
 ## Quick Start (Local Development)
 

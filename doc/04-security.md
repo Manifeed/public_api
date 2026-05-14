@@ -61,7 +61,7 @@ Behavior:
 
 Production traffic is expected to flow through:
 
-`Client -> Traefik HTTPS/domain -> nginx HTTP interne -> public_api -> services internes`
+`Client -> Traefik HTTPS/domain -> nginx internal HTTP -> public_api -> internal services`
 
 Traefik owns TLS termination, HTTP-to-HTTPS redirects, domain routing, and
 normalization of `X-Forwarded-*` headers. Nginx is not exposed publicly by the
