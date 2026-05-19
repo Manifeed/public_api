@@ -1,3 +1,4 @@
+from app.clients.networking.admin_service_networking_client import get_required_admin_service_client
 from app.clients.providers.content_service_client_provider import get_required_content_service_client
 
 from shared_backend.schemas.analytics.analysis_schema import SimilarSourcesRead
@@ -16,7 +17,7 @@ def list_admin_sources(
     offset: int,
     author_id: int | None,
 ) -> RssSourcePageRead:
-    return get_required_content_service_client().list_admin_sources(
+    return get_required_admin_service_client().list_admin_sources(
         limit=limit,
         offset=offset,
         author_id=author_id,
@@ -30,7 +31,7 @@ def list_admin_sources_by_feed(
     offset: int,
     author_id: int | None,
 ) -> RssSourcePageRead:
-    return get_required_content_service_client().list_admin_sources_by_feed(
+    return get_required_admin_service_client().list_admin_sources_by_feed(
         feed_id=feed_id,
         limit=limit,
         offset=offset,
@@ -45,7 +46,7 @@ def list_admin_sources_by_company(
     offset: int,
     author_id: int | None,
 ) -> RssSourcePageRead:
-    return get_required_content_service_client().list_admin_sources_by_company(
+    return get_required_admin_service_client().list_admin_sources_by_company(
         company_id=company_id,
         limit=limit,
         offset=offset,
@@ -54,7 +55,7 @@ def list_admin_sources_by_company(
 
 
 def read_admin_source(*, source_id: int) -> RssSourceDetailRead:
-    return get_required_content_service_client().read_admin_source(source_id=source_id)
+    return get_required_admin_service_client().read_admin_source(source_id=source_id)
 
 
 def list_user_sources(*, limit: int, offset: int) -> UserSourcePageRead:

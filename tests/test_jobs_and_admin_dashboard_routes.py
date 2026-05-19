@@ -3,10 +3,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.services import admin_dashboard_service, jobs_service
-from shared_backend.schemas.analytics.analysis_schema import AnalysisOverviewRead, SimilarSourceRead, SimilarSourcesRead
 from shared_backend.schemas.health import HealthRead, HealthServiceRead
 from shared_backend.schemas.jobs.job_automation_schema import JobAutomationRead
-from shared_backend.schemas.jobs.job_enqueue_schema import JobEnqueueRead
+from shared_backend.schemas.jobs.job_enqueue_schema import (
+    JobEnqueueRead,
+    SourceEmbeddingJobCreateRequestSchema,
+)
 from shared_backend.schemas.jobs.job_schema import (
     JobControlCommandRead,
     JobOverviewItemRead,
@@ -14,17 +16,15 @@ from shared_backend.schemas.jobs.job_schema import (
     JobTaskRead,
     JobsOverviewRead,
 )
-from shared_backend.schemas.sources.source_schema import UserSourceDetailRead
 
 from .conftest import client_context, override_masked_admin_user
 
 
-def test_admin_dashboard_routes_return_service_payloads(
+def test_admin_dashboard_health_route_returns_service_payload(
     app_env,
     monkeypatch,
     admin_user,
 ) -> None:
-    now = datetime.now(timezone.utc)
     health = HealthRead(
         status="ok",
         database="ok",
@@ -38,57 +38,15 @@ def test_admin_dashboard_routes_return_service_payloads(
             )
         },
     )
-    overview = AnalysisOverviewRead(
-        total_sources=100,
-        indexed_embeddings=95,
-        qdrant_collection="sources",
-    )
-    source_detail = UserSourceDetailRead(
-        id=88,
-        title="Nearest source",
-        authors=[],
-        url="https://example.com/source",
-        published_at=now,
-        company_names=["ACME"],
-        summary="nearest summary",
-        feed_sections=["ai"],
-    )
-    similar = SimilarSourcesRead(
-        source_id=88,
-        model_name="BAAI/bge-m3",
-        items=[SimilarSourceRead(score=0.91, source=source_detail)],
-    )
-    seen: dict[str, object] = {}
 
     monkeypatch.setattr(admin_dashboard_service, "read_health", lambda: health)
-    monkeypatch.setattr(admin_dashboard_service, "read_analysis_overview", lambda: overview)
-    monkeypatch.setattr(
-        admin_dashboard_service,
-        "read_similar_sources",
-        lambda *, source_id, limit: _capture(
-            seen,
-            "similar",
-            {"source_id": source_id, "limit": limit},
-            similar,
-        ),
-    )
 
     with client_context() as client:
         override_masked_admin_user(client.app, admin_user)
         health_response = client.get("/api/admin/health/")
-        overview_response = client.get("/api/admin/analysis/overview")
-        similar_response = client.get(
-            "/api/admin/analysis/similar-sources",
-            params={"source_id": 88, "limit": 7},
-        )
 
     assert health_response.status_code == 200
     assert health_response.json()["database"] == "ok"
-    assert overview_response.status_code == 200
-    assert overview_response.json()["indexed_embeddings"] == 95
-    assert similar_response.status_code == 200
-    assert similar_response.json()["items"][0]["source"]["id"] == 88
-    assert seen["similar"] == {"source_id": 88, "limit": 7}
 
 
 def test_jobs_routes_cover_overview_enqueue_automation_and_details(
@@ -266,7 +224,9 @@ def test_jobs_routes_cover_overview_enqueue_automation_and_details(
     assert rss_enqueue_response.status_code == 200
     assert seen["rss_payload"] == {"feed_ids": [1, 2]}
     assert embedding_enqueue_response.status_code == 200
-    assert seen["embedding_payload"] == {"reembed_model_mismatches": True}
+    assert seen["embedding_payload"] == SourceEmbeddingJobCreateRequestSchema(
+        reembed_model_mismatches=True,
+    ).model_dump()
     assert automation_response.status_code == 200
     assert automation_response.json()["status"] == "idle"
     assert automation_update_response.status_code == 200

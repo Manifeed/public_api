@@ -307,7 +307,10 @@ def test_sources_routes_cover_user_and_admin_flows(
     assert seen["similar"] == {"source_id": 21, "limit": 5}
 
 
-def test_user_source_search_rejects_removed_language_filter(client_context, authenticated_user) -> None:
+def test_user_source_search_rejects_removed_language_filter(
+    app_env,
+    authenticated_user,
+) -> None:
     with client_context() as client:
         override_authenticated_user(client.app, authenticated_user)
         client.cookies.set("manifeed_session", "session-token")
@@ -315,6 +318,7 @@ def test_user_source_search_rejects_removed_language_filter(client_context, auth
         response = client.get("/api/sources/search", params={"q": "finance", "language": "fr"})
 
     assert response.status_code == 422
+    assert "Unsupported search query parameter" in response.json()["message"]
 
 
 def _store_and_return(

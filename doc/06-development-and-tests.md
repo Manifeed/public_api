@@ -17,6 +17,8 @@ export USER_SERVICE_URL=http://localhost:8002
 export ADMIN_SERVICE_URL=http://localhost:8003
 export CONTENT_SERVICE_URL=http://localhost:8004
 export WORKER_SERVICE_URL=http://localhost:8005
+export PUBLIC_BASE_URL=http://localhost
+export INTERNAL_SERVICE_TOKEN=replace-with-strong-secret-min-32-chars
 ```
 
 Optional browser-friendly local settings:
@@ -54,25 +56,32 @@ docker run --rm -p 8000:8000 \
 	-e INTERNAL_SERVICE_TOKEN='replace-with-strong-secret-min-32-chars' \
 	-e CORS_ORIGINS='https://app.example.com' \
 	-e CSRF_TRUSTED_ORIGINS='https://app.example.com' \
+	-e PUBLIC_BASE_URL='https://app.example.com' \
 	manifeed-public-api
 ```
 
 ## Tests
 
-Run all tests:
+Run all tests from `public_api/`:
 
 ```bash
+cd public_api
 pytest -q
 ```
 
-Current test coverage:
+`tests/conftest.py` bootstraps the minimum env required for import-time app
+creation. Route tests that need upstream URLs or CSRF settings should use the
+`app_env` fixture.
 
-- Python source syntax validation
+Current coverage includes:
 
-Recommended next tests:
-
-- route-level tests for auth cookie behavior
-- CSRF middleware tests
-- dependency tests for admin and API-access guards
-- upstream client contract tests with mocked responses
-- crawler install script tests
+- Python syntax validation (`test_source_syntax.py`)
+- auth routes, session cookie behavior, and auth-context cache
+- account and admin route delegation
+- jobs and admin health routes
+- RSS and sources routes, including removed search filters
+- rate limiting and CSRF/security contracts
+- readiness and worker release checks
+- admin networking client payload wrapping
+- install script route
+- documentation and infra contract checks against the monorepo

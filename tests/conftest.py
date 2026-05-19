@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
+
+# Bootstrap env before `app.main` runs module-level `create_app()`.
+os.environ.setdefault("APP_ENV", "test")
+os.environ.setdefault("PUBLIC_BASE_URL", "https://public.example.test")
+os.environ.setdefault("INTERNAL_SERVICE_TOKEN", "x" * 32)
 
 from app.dependencies.auth_dependencies import (
     require_authenticated_user,

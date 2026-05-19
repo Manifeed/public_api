@@ -1,8 +1,3 @@
-from shared_backend.schemas.internal.service_schema import (
-    InternalResolvedSessionRead,
-    InternalServiceHealthRead,
-)
-
 from pydantic import BaseModel, Field
 
 

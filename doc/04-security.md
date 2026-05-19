@@ -37,12 +37,12 @@ Current-user resolution:
 
 - authenticated routes call `auth_service` to resolve the current session
 - account routes forward that resolved context to `user_service` instead of sending the raw session token again
-- admin routes require `role == "admin"`
-- API key routes require `api_access_enabled == true`
+- admin routes use `require_masked_admin_user`
+- API key routes use `require_masked_api_enabled_user`
 
 Masked access behavior:
 
-- some guards intentionally return `NotFound` instead of `Forbidden`
+- these guards intentionally return `NotFound` instead of `Forbidden`
 - this reduces route discoverability for unauthorized callers
 
 ## Inter-Service Security

@@ -19,7 +19,6 @@ class UpstreamCallTrace:
 @dataclass
 class RequestLogContext:
     started_at: float = field(default_factory=perf_counter)
-    route_class: str = "public-api"
     rate_limit_blocked: bool = False
     csrf_denied: bool = False
     upstream_calls: list[UpstreamCallTrace] = field(default_factory=list)

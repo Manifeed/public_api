@@ -11,7 +11,6 @@ from shared_backend.clients.service_http_client import (
     ServiceClientConfig,
     ServiceRequestTrace,
     build_service_config,
-    raise_for_service_error as shared_raise_for_service_error,
     request_service as shared_request_service,
     require_service_client as shared_require_service_client,
 )
@@ -38,15 +37,6 @@ def request_service(
         app_error_factory=AppError,
         upstream_error_factory=UpstreamServiceError,
         trace_callback=_record_upstream_trace,
-    )
-
-
-def raise_for_service_error(response: httpx.Response, service_name: str) -> None:
-    shared_raise_for_service_error(
-        response,
-        service_name=service_name,
-        app_error_factory=AppError,
-        upstream_error_factory=UpstreamServiceError,
     )
 
 

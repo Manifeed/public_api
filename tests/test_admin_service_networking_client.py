@@ -17,6 +17,7 @@ from shared_backend.schemas.internal.user_service_schema import (
     InternalAdminUserUpdateRequest,
     InternalCurrentUserPayload,
 )
+from shared_backend.schemas.sources.source_schema import RssSourcePageRead
 
 
 def _config() -> ServiceClientConfig:
@@ -126,3 +127,29 @@ def test_update_admin_user_wraps_current_user_and_payload(monkeypatch) -> None:
         payload=payload,
     ).model_dump(mode="json", exclude_none=True)
     assert seen["json"] == {"payload": expected_payload}
+
+
+def test_list_admin_sources_uses_internal_admin_sources_endpoint(monkeypatch) -> None:
+    seen: dict[str, object] = {}
+
+    def fake_request_service(**kwargs) -> httpx.Response:
+        seen.update(kwargs)
+        return httpx.Response(
+            200,
+            json={
+                "items": [],
+                "total": 0,
+                "limit": 20,
+                "offset": 5,
+            },
+            request=httpx.Request("GET", "http://admin-service:8000/internal/admin/sources/"),
+        )
+
+    monkeypatch.setattr(admin_service_networking_client, "request_service", fake_request_service)
+    client = AdminServiceNetworkingClient(_config())
+
+    response = client.list_admin_sources(limit=20, offset=5, author_id=7)
+
+    assert isinstance(response, RssSourcePageRead)
+    assert seen["path"] == "/internal/admin/sources/"
+    assert seen["params"] == {"limit": 20, "offset": 5, "author_id": 7}

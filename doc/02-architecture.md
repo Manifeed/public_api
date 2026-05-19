@@ -19,15 +19,16 @@ Mounted routers:
 - `account_router` -> `/api/account`
 - `admin_router` -> `/api/admin`
 - `admin_health_router` -> `/api/admin/health`
-- `admin_analysis_router` -> `/api/admin/analysis`
 - `jobs_router` -> `/api/admin/jobs`
 - `rss_admin_router` -> `/api/admin/rss`
 - `admin_sources_router` -> `/api/admin/sources`
 - `user_sources_router` -> `/api/sources`
+- `install_router` -> `/install`
 
-Health route:
+Health routes:
 
 - `GET /internal/health`
+- `GET /internal/ready`
 
 ## Dependency Layer
 
@@ -37,8 +38,6 @@ Authentication and authorization dependencies live in
 Core guards:
 
 - `require_authenticated_user`
-- `require_admin_user`
-- `require_api_enabled_user`
 - `require_masked_admin_user`
 - `require_masked_api_enabled_user`
 

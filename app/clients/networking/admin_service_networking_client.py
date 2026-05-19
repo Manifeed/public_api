@@ -37,6 +37,7 @@ from shared_backend.schemas.rss.rss_enabled_toggle_schema import (
 )
 from shared_backend.schemas.rss.rss_feed_schema import RssFeedRead
 from shared_backend.schemas.rss.rss_sync_schema import RssSyncRead
+from shared_backend.schemas.sources.source_schema import RssSourceDetailRead, RssSourcePageRead
 
 from shared_backend.schemas.admin.admin_stats_schema import AdminStatsRead
 from shared_backend.schemas.admin.admin_user_schema import (
@@ -166,6 +167,51 @@ class AdminServiceNetworkingClient:
     def list_jobs(self, *, limit: int) -> JobsOverviewRead:
         response = self._get("/internal/admin/jobs", params={"limit": limit})
         return JobsOverviewRead.model_validate(response.json())
+
+    def list_admin_sources(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        author_id: int | None,
+    ) -> RssSourcePageRead:
+        response = self._get(
+            "/internal/admin/sources/",
+            params={"limit": limit, "offset": offset, "author_id": author_id},
+        )
+        return RssSourcePageRead.model_validate(response.json())
+
+    def list_admin_sources_by_feed(
+        self,
+        *,
+        feed_id: int,
+        limit: int,
+        offset: int,
+        author_id: int | None,
+    ) -> RssSourcePageRead:
+        response = self._get(
+            f"/internal/admin/sources/feeds/{feed_id}",
+            params={"limit": limit, "offset": offset, "author_id": author_id},
+        )
+        return RssSourcePageRead.model_validate(response.json())
+
+    def list_admin_sources_by_company(
+        self,
+        *,
+        company_id: int,
+        limit: int,
+        offset: int,
+        author_id: int | None,
+    ) -> RssSourcePageRead:
+        response = self._get(
+            f"/internal/admin/sources/companies/{company_id}",
+            params={"limit": limit, "offset": offset, "author_id": author_id},
+        )
+        return RssSourcePageRead.model_validate(response.json())
+
+    def read_admin_source(self, *, source_id: int) -> RssSourceDetailRead:
+        response = self._get(f"/internal/admin/sources/{source_id}")
+        return RssSourceDetailRead.model_validate(response.json())
 
     def enqueue_rss_scrape_job(self, payload: RssScrapeJobCreateRequestSchema | None) -> JobEnqueueRead:
         response = self._post(

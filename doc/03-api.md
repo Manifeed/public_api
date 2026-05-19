@@ -165,11 +165,9 @@ All admin routes require admin access through masked admin dependency checks.
 - `PATCH /api/admin/users/{user_id}`
 - `GET /api/admin/stats`
 
-### Health and Analysis
+### Health
 
 - `GET /api/admin/health/`
-- `GET /api/admin/analysis/overview`
-- `GET /api/admin/analysis/similar-sources`
 
 ### Jobs
 
@@ -214,11 +212,33 @@ Requires an authenticated session cookie.
 
 Returns the user-facing source detail from `content_service`.
 
+### `GET /api/sources/search`
+
+Requires an authenticated session cookie.
+
+Query parameters:
+
+- `q` (optional)
+- `limit` (default `24`, max `100`)
+- `offset` (default `0`)
+- `country` (optional ISO country code)
+- `company_id` (optional)
+- `author_id` (optional)
+- `period` (`all`, `1h`, `24h`, `7d`, `1m`, `1y`)
+
+Unknown query parameters return HTTP `422`.
+
 ### `GET /api/sources/{source_id}/similar`
 
 Requires an authenticated session cookie.
 
-Returns similar-source analysis from `content_service`.
+Returns similar-source recommendations from `content_service`.
+
+## Install Endpoint
+
+### `GET /install/`
+
+Returns the public shell script used to install `crawler_rss` on a client machine.
 
 ## Runtime Flows
 
@@ -241,10 +261,3 @@ Returns similar-source analysis from `content_service`.
 For `/api/account/*`, the target `user_service` receives the resolved
 current-user context over the internal service-authenticated request. The raw
 browser session token is not forwarded to `user_service`.
-
-### Public RSS Image Flow
-
-1. accept public image request
-2. fetch the image bytes from `content_service`
-3. copy media type and optional filename
-4. return the image response to the caller

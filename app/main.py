@@ -17,7 +17,7 @@ from app.middleware.csrf_middleware import csrf_origin_middleware
 from app.middleware.observability_middleware import observability_middleware
 from app.routers.account_router import account_router
 from app.routers.install_router import install_router
-from app.routers.admin_dashboard_router import admin_analysis_router, admin_health_router
+from app.routers.admin_dashboard_router import admin_health_router
 from app.routers.admin_router import admin_router
 from app.routers.auth_router import auth_router
 from app.routers.jobs_router import jobs_router
@@ -84,7 +84,6 @@ def create_app() -> FastAPI:
     app.include_router(account_router)
     app.include_router(admin_router)
     app.include_router(admin_health_router)
-    app.include_router(admin_analysis_router)
     app.include_router(jobs_router)
     app.include_router(rss_admin_router)
     app.include_router(admin_sources_router)
