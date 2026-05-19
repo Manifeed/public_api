@@ -266,6 +266,8 @@ def test_sources_routes_cover_user_and_admin_flows(
             params={
                 "q": "finance",
                 "country": "fr",
+                "language": "fr",
+                "theme": "politics",
                 "company_id": 4,
                 "author_id": 8,
                 "period": "24h",
@@ -296,6 +298,8 @@ def test_sources_routes_cover_user_and_admin_flows(
         "limit": 24,
         "offset": 0,
         "country": "fr",
+        "language": "fr",
+        "theme": "politics",
         "company_id": 4,
         "author_id": 8,
         "period": "24h",
@@ -307,18 +311,11 @@ def test_sources_routes_cover_user_and_admin_flows(
     assert seen["similar"] == {"source_id": 21, "limit": 5}
 
 
-def test_user_source_search_rejects_removed_language_filter(
-    app_env,
-    authenticated_user,
-) -> None:
-    with client_context() as client:
-        override_authenticated_user(client.app, authenticated_user)
-        client.cookies.set("manifeed_session", "session-token")
+def test_user_source_search_allows_language_and_theme_filters() -> None:
+    from app.routers.sources_router import _SOURCE_SEARCH_QUERY_PARAMS
 
-        response = client.get("/api/sources/search", params={"q": "finance", "language": "fr"})
-
-    assert response.status_code == 422
-    assert "Unsupported search query parameter" in response.json()["message"]
+    assert "language" in _SOURCE_SEARCH_QUERY_PARAMS
+    assert "theme" in _SOURCE_SEARCH_QUERY_PARAMS
 
 
 def _store_and_return(
